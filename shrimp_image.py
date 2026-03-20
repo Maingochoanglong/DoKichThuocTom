@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 from collections import deque
 from ultralytics import YOLO
+import os
+from pathlib import Path
 
 # CONFIG
 INPUT_DIR  = "input"
@@ -40,42 +42,45 @@ def bfs(skeleton, start):
     return farthest, visited
 
 # MAIN
-import os
-from pathlib import Path
-
-# Tạo thư mục output nếu chưa có
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Chạy mô hình YOLO
-model      = YOLO(MODEL_PATH)
-
-# Lấy danh địa chỉ ảnh trong thư mục
-img_paths  = [p for p in Path(INPUT_DIR).iterdir() if p.suffix.lower() in IMG_EXTS]
+model     = YOLO(MODEL_PATH)
+img_paths = [p for p in Path(INPUT_DIR).iterdir() if p.suffix.lower() in IMG_EXTS]
 
 print(f"[OK] Tim thay {len(img_paths)} anh trong '{INPUT_DIR}/'")
 
-for img_path in img_paths:
+for img_path in sorted(img_paths):
     image = cv2.imread(str(img_path))
     if image is None:
         print(f"[!] Bo qua (khong doc duoc): {img_path.name}")
         continue
 
-    # h: độ cao ảnh đơn vị px
-    # w: độ rộng ảnh đơn vị px
     results = model(image, verbose=False, retina_masks=True)[0]
-    canvas  = image.copy()
+
+    # 3 canvas riêng biệt
+    canvas_result   = image.copy()
+    canvas_mask     = image.copy()
+    canvas_skeleton = image.copy()
 
     if results.masks is None:
         print(f"  {img_path.name}: khong co mask")
-        cv2.imwrite(str(Path(OUTPUT_DIR) / img_path.name), canvas)
+        cv2.imwrite(str(Path(OUTPUT_DIR) / img_path.name), canvas_result)
         continue
 
     for i, mask_tensor in enumerate(results.masks.data):
 
         # 1. Lấy mask
-        mask_u8 = (mask_tensor.numpy() > 0.5).astype(np.uint8) * 255
+        # mask_tensor là tensor PyTorch kiểu float32, giá trị từ 0.0 đến 1.0
+        # .numpy()        : chuyển tensor sang numpy để OpenCV xử lý được
+        # > 0.5           : chuyển float sang bool (True = tôm, False = nền)
+        # .astype(uint8)  : chuyển bool sang số nguyên (True=1, False=0)
+        # * 255           : chuyển sang ảnh trắng đen (255 = tôm, 0 = nền)
+        #                   vì cv2.ximgproc.thinning chỉ nhận uint8 với giá trị 0 hoặc 255
+        mask_u8  = (mask_tensor.numpy() > 0.5).astype(np.uint8) * 255
 
-        # 2. Thinning đến skeleton
+        # 2. Thinning den skeleton
+        # cv2.ximgproc.thinning trả về uint8 (0 hoặc 255)
+        # > 0 : chuyển sang bool vì hàm bfs kiểm tra skeleton[ny, nx] theo kiểu bool
         skeleton = cv2.ximgproc.thinning(mask_u8) > 0
 
         # 3. Lấy 1 điểm bất kỳ trên skeleton
@@ -97,22 +102,37 @@ for img_path in img_paths:
             node = visited[node]
         path.reverse()
 
-        # 7. Vẽ đường + ghi pixel lên ảnh
         clr = COLORS[i % len(COLORS)]
+
+        # 7. Vẽ mask lên canvas_mask
+        overlay = canvas_mask.copy()
+        overlay[mask_u8 > 127] = clr
+        cv2.addWeighted(overlay, 0.4, canvas_mask, 0.6, 0, canvas_mask)
+
+        # 8. Vẽ skeleton lên canvas_skeleton
+        skel_ys, skel_xs = np.where(skeleton)
+        for sy, sx in zip(skel_ys.tolist(), skel_xs.tolist()):
+            cv2.circle(canvas_skeleton, (sx, sy), 1, clr, -1)
+
+        # 9. Vẽ đường + ghi pixel lên canvas_result
         for y, x in path:
-            cv2.circle(canvas, (x, y), 2, clr, -1)
+            cv2.circle(canvas_result, (x, y), 2, clr, -1)
 
         mid = path[len(path) // 2]
-        cv2.putText(canvas, f"#{i+1}  {len(path)}px  {len(path)*SCALE:.1f}mm",
+        cv2.putText(canvas_result, f"#{i+1}  {len(path)}px  {len(path)*SCALE:.1f}mm",
                     (mid[1] + 6, mid[0] - 6),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.52, (0,0,0), 3, cv2.LINE_AA)
-        cv2.putText(canvas, f"#{i+1}  {len(path)}px  {len(path)*SCALE:.1f}mm",
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.52, (0, 0, 0), 3, cv2.LINE_AA)
+        cv2.putText(canvas_result, f"#{i+1}  {len(path)}px  {len(path)*SCALE:.1f}mm",
                     (mid[1] + 6, mid[0] - 6),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.52, clr,   1, cv2.LINE_AA)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.52, clr, 1, cv2.LINE_AA)
 
         print(f"  {img_path.name}  con #{i+1}: {len(path)} px = {len(path)*SCALE:.2f} mm")
 
-    # Lưu ảnh kết quả
-    out_path = Path(OUTPUT_DIR) / img_path.name
-    cv2.imwrite(str(out_path), canvas)
-    print(f"   Da luu: {out_path}")
+    # Lưu 3 ảnh với tên khác nhau
+    stem = img_path.stem
+    ext  = img_path.suffix
+
+    cv2.imwrite(str(Path(OUTPUT_DIR) / f"{stem}_result{ext}"),   canvas_result)
+    cv2.imwrite(str(Path(OUTPUT_DIR) / f"{stem}_mask{ext}"),     canvas_mask)
+    cv2.imwrite(str(Path(OUTPUT_DIR) / f"{stem}_skeleton{ext}"), canvas_skeleton)
+    print(f"  Da luu: {stem}_result{ext}, {stem}_mask{ext}, {stem}_skeleton{ext}")
