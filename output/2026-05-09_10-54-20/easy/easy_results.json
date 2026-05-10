@@ -1,0 +1,22 @@
+{
+  "source_file": "easy.jpg",
+  "source_stem": "easy",
+  "processed_at": "2026-05-09T10:54:33",
+  "scale_mm_per_px": 1,
+  "shrimps": [
+    {
+      "track_id": 1,
+      "frame_idx": 0,
+      "pixel_length": 1360.2,
+      "real_length_mm": 1360.16,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\easy\\ID1\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\easy\\ID1\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\easy\\ID1\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\easy\\ID1\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\easy\\ID1\\F6_Result_F0_1360px.jpg"
+      }
+    }
+  ]
+}

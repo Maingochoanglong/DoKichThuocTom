@@ -1,0 +1,11 @@
+Thời điểm chạy    : 2026-05-09 10:06:50
+Thư mục đầu vào   : input
+Số file còn lại   : 1  (SAVE=True)
+  F1  Đọc input (Ảnh/Video)    17.48 s
+  F2  Phát hiện & Theo dõi     35.54 s
+  F3  Kiểm tra chạm đường      35.53 s
+  F4  Phân đoạn (Segment)      35.70 s
+  F5  Tính skeleton & BFS      35.91 s
+  F6  Lưu kết quả & JSON       35.93 s
+Tổng cộng         : 00:00:35
+----------------------------------------------------
