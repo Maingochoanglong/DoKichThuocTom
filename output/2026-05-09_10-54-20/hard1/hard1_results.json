@@ -1,0 +1,204 @@
+{
+  "source_file": "hard1.jpg",
+  "source_stem": "hard1",
+  "processed_at": "2026-05-09T10:54:50",
+  "scale_mm_per_px": 1,
+  "shrimps": [
+    {
+      "track_id": 1,
+      "frame_idx": 0,
+      "pixel_length": 1406.1,
+      "real_length_mm": 1406.12,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID1\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID1\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID1\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID1\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID1\\F6_Result_F0_1406px.jpg"
+      }
+    },
+    {
+      "track_id": 2,
+      "frame_idx": 0,
+      "pixel_length": 1190.7,
+      "real_length_mm": 1190.73,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID2\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID2\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID2\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID2\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID2\\F6_Result_F0_1191px.jpg"
+      }
+    },
+    {
+      "track_id": 3,
+      "frame_idx": 0,
+      "pixel_length": 1173.9,
+      "real_length_mm": 1173.86,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID3\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID3\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID3\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID3\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID3\\F6_Result_F0_1174px.jpg"
+      }
+    },
+    {
+      "track_id": 4,
+      "frame_idx": 0,
+      "pixel_length": 912.8,
+      "real_length_mm": 912.85,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID4\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID4\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID4\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID4\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID4\\F6_Result_F0_913px.jpg"
+      }
+    },
+    {
+      "track_id": 5,
+      "frame_idx": 0,
+      "pixel_length": 1121.0,
+      "real_length_mm": 1121.03,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID5\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID5\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID5\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID5\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID5\\F6_Result_F0_1121px.jpg"
+      }
+    },
+    {
+      "track_id": 6,
+      "frame_idx": 0,
+      "pixel_length": 1186.0,
+      "real_length_mm": 1186.0,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID6\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID6\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID6\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID6\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID6\\F6_Result_F0_1186px.jpg"
+      }
+    },
+    {
+      "track_id": 7,
+      "frame_idx": 0,
+      "pixel_length": 563.3,
+      "real_length_mm": 563.32,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID7\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID7\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID7\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID7\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID7\\F6_Result_F0_563px.jpg"
+      }
+    },
+    {
+      "track_id": 8,
+      "frame_idx": 0,
+      "pixel_length": 1194.9,
+      "real_length_mm": 1194.94,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID8\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID8\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID8\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID8\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID8\\F6_Result_F0_1195px.jpg"
+      }
+    },
+    {
+      "track_id": 9,
+      "frame_idx": 0,
+      "pixel_length": 982.3,
+      "real_length_mm": 982.29,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID9\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID9\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID9\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID9\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID9\\F6_Result_F0_982px.jpg"
+      }
+    },
+    {
+      "track_id": 10,
+      "frame_idx": 0,
+      "pixel_length": 1400.9,
+      "real_length_mm": 1400.86,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID10\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID10\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID10\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID10\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID10\\F6_Result_F0_1401px.jpg"
+      }
+    },
+    {
+      "track_id": 11,
+      "frame_idx": 0,
+      "pixel_length": 1254.6,
+      "real_length_mm": 1254.61,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID11\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID11\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID11\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID11\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID11\\F6_Result_F0_1255px.jpg"
+      }
+    },
+    {
+      "track_id": 12,
+      "frame_idx": 0,
+      "pixel_length": 897.7,
+      "real_length_mm": 897.66,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID12\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID12\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID12\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID12\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID12\\F6_Result_F0_898px.jpg"
+      }
+    },
+    {
+      "track_id": 13,
+      "frame_idx": 0,
+      "pixel_length": 548.0,
+      "real_length_mm": 547.99,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID13\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID13\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID13\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID13\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID13\\F6_Result_F0_548px.jpg"
+      }
+    },
+    {
+      "track_id": 14,
+      "frame_idx": 0,
+      "pixel_length": 576.0,
+      "real_length_mm": 576.0,
+      "size": "Ngoại cỡ lớn",
+      "images": {
+        "f4_seg": "output\\2026-05-09_10-54-20\\hard1\\ID14\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-05-09_10-54-20\\hard1\\ID14\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-05-09_10-54-20\\hard1\\ID14\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-05-09_10-54-20\\hard1\\ID14\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-05-09_10-54-20\\hard1\\ID14\\F6_Result_F0_576px.jpg"
+      }
+    }
+  ]
+}
