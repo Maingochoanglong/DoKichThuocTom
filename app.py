@@ -14,7 +14,7 @@ from flask import Flask, Response, jsonify, render_template, request, send_file
 import config
 import size
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", template_folder="templates", static_url_path="/static")
 BASE_DIR = Path(__file__).resolve().parent
 INPUT_DIR = BASE_DIR / config.INPUT_DIR
 OUTPUT_DIR = BASE_DIR / config.OUTPUT_DIR
