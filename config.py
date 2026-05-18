@@ -24,10 +24,10 @@ INPUT_DIR  = "input"
 OUTPUT_DIR = "output"
 
 # Xóa dữ liệu cũ trước mỗi lần chạy
-# CLEAR_OUTPUT : True → xóa toàn bộ thư mục output trước khi bắt đầu pipeline.
-# CLEAR_INPUT  : True → xóa file input sau khi F6 ghi JSON thành công.
+# CLEAR_OUTPUT : True -> xóa toàn bộ thư mục output trước khi bắt đầu pipeline.
+# CLEAR_INPUT  : True -> xóa file input sau khi F6 ghi JSON thành công.
 CLEAR_OUTPUT = False
-CLEAR_INPUT  = True
+CLEAR_INPUT  = False
 
 # True  = các file trong input/ là chunk liên tiếp của 1 băng chuyền
 # False = mỗi file là 1 video độc lập (hành vi cũ)
@@ -36,7 +36,7 @@ CHUNK_MODE = False
 MODEL_DET = "model/yolov8n_shrimp_v46_openvino_model"
 MODEL_SEG = "model/yolov8n-seg_shrimp_v54_openvino_model"
 
-SCALE = 1      # hệ số quy đổi pixel → mm — cập nhật sau khi hiệu chuẩn camera
+SCALE = 1      # hệ số quy đổi pixel -> mm — cập nhật sau khi hiệu chuẩn camera
                # Ví dụ: SCALE = 0.35 nghĩa là 1 pixel = 0.35 mm
 
 IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff", ".tif", ".heic"}

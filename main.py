@@ -28,6 +28,7 @@ from config import (
     CLEAR_INPUT, CLEAR_OUTPUT,
     INPUT_DIR, MODEL_DET, MODEL_SEG, OUTPUT_DIR, SAVE,
 )
+from logger_setup import get_logger, setup_logging
 from pipeline import (
     flow1_read_input, flow2_detect_track, flow3_touch_logic,
     flow4_segment, flow5_longest_path, flow6_save_results,
@@ -40,7 +41,6 @@ def _clear_output_dir(output_dir: str) -> None:
     p = Path(output_dir)
     if p.exists():
         shutil.rmtree(p)
-        print(f"[  ] Đã xóa output cũ: {output_dir}/")
     p.mkdir(parents=True, exist_ok=True)
 
 
@@ -68,7 +68,6 @@ def _safe_thread(
         with error_lock:
             error_info.append((thread_name, exc, tb))
         error_event.set()
-        # Unblock tất cả luồng đang chờ queue
         for q in all_queues:
             try:
                 q.put_nowait(None)
@@ -89,20 +88,23 @@ def main() -> None:
     run_dir   = str(Path(OUTPUT_DIR) / timestamp)
     Path(run_dir).mkdir(parents=True, exist_ok=True)
 
-    print("[  ] Đang tải mô hình 1 — Phát hiện (Detect)...")
+    # Khởi tạo logger — file pipeline.log nằm ngay tại run_dir
+    log = setup_logging(run_dir)
+
+    log.info("Đang tải mô hình 1 — Phát hiện (Detect)...")
     model_det = YOLO(MODEL_DET, task="detect")
 
-    print("[  ] Đang tải mô hình 2 — Phân đoạn (Segment)...")
+    log.info("Đang tải mô hình 2 — Phân đoạn (Segment)...")
     model_seg = YOLO(MODEL_SEG, task="segment")
 
-    print(f"[OK] Tải mô hình hoàn tất.")
-    print(f"     SAVE={SAVE}  CLEAR_INPUT={CLEAR_INPUT}  CLEAR_OUTPUT={CLEAR_OUTPUT}")
-    print(f"     Input  : {INPUT_DIR}/")
-    print(f"     Output : {run_dir}/\n")
+    log.info("Tải mô hình hoàn tất.")
+    log.info(f"SAVE={SAVE}  CLEAR_INPUT={CLEAR_INPUT}  CLEAR_OUTPUT={CLEAR_OUTPUT}")
+    log.info(f"Input  : {INPUT_DIR}/")
+    log.info(f"Output : {run_dir}/")
 
     flow_times: dict[str, float] = {}
     error_event = threading.Event()
-    error_info: list[tuple] = []      # [(thread_name, exception, traceback_str)]
+    error_info: list[tuple] = []
     error_lock = threading.Lock()
 
     # Queues
@@ -140,16 +142,14 @@ def main() -> None:
     # Kiểm tra lỗi
     if error_info:
         sep = "=" * 60
-        print(f"\n{sep}")
-        print(f"  LỖI PIPELINE — {len(error_info)} luồng gặp sự cố")
-        print(f"{sep}")
+        log.error(sep)
+        log.error(f"LỖI PIPELINE — {len(error_info)} luồng gặp sự cố")
+        log.error(sep)
         for name, exc, tb in error_info:
-            print(f"\n  [{name}] {type(exc).__name__}: {exc}")
-            print(f"  {'─' * 56}")
+            log.error(f"[{name}] {type(exc).__name__}: {exc}")
             for line in tb.strip().splitlines():
-                print(f"    {line}")
-        print(f"\n{sep}")
-        print(f"[!!] Pipeline dừng do lỗi. Kiểm tra chi tiết ở trên.")
+                log.error(f"  {line}")
+        log.error("Pipeline dừng do lỗi. Kiểm tra chi tiết ở trên.")
         sys.exit(1)
 
     # Báo cáo thời gian
@@ -165,36 +165,17 @@ def main() -> None:
         "F6": "Lưu kết quả & JSON     ",
     }
     sep = "=" * 52
-    print(f"\n{sep}")
-    print(f"  THỜI GIAN THỰC THI TỪNG LUỒNG")
-    print(f"{'-' * 52}")
+    log.info(sep)
+    log.info("THỜI GIAN THỰC THI TỪNG LUỒNG")
+    log.info("-" * 52)
     for key in ["F1", "F2", "F3", "F4", "F5", "F6"]:
         val = flow_times.get(key)
         if val is not None:
-            print(f"  {key}  {labels[key]}  {val:>8.2f} s")
-    print(f"{'-' * 52}")
-    print(f"  TỔNG CỘNG                           {elapsed:>8.2f} s  ({time_str})")
-    print(f"{sep}\n")
-    print(f"[OK] Kết quả đã lưu tại: {run_dir}/")
-
-    # Ghi log
-    log_file     = Path(run_dir) / "execution_time_log.txt"
-    current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    num_files    = len(list(Path(INPUT_DIR).iterdir())) if Path(INPUT_DIR).exists() else 0
-
-    with open(log_file, "a", encoding="utf-8") as f:
-        f.write(f"Thời điểm chạy    : {current_time}\n")
-        f.write(f"Thư mục đầu vào   : {INPUT_DIR}\n")
-        f.write(f"Số file còn lại   : {num_files}  (SAVE={SAVE})\n")
-        for key in ["F1", "F2", "F3", "F4", "F5", "F6"]:
-            val = flow_times.get(key)
-            if val is not None:
-                f.write(f"  {key}  {labels[key]}  {val:.2f} s\n")
-        f.write(f"Tổng cộng         : {time_str}\n")
-        f.write("-" * 52 + "\n")
-
-    print(f"[OK] Log thực thi → {log_file}")
-
+            log.info(f"{key}  {labels[key]}  {val:>8.2f} s")
+    log.info("-" * 52)
+    log.info(f"TỔNG CỘNG                           {elapsed:>8.2f} s  ({time_str})")
+    log.info(sep)
+    log.info(f"Kết quả đã lưu tại: {run_dir}/")
 
 if __name__ == "__main__":
     main()

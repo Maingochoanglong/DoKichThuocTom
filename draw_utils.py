@@ -1,14 +1,12 @@
 """
 draw_utils.py
-Các hàm vẽ & xuất ảnh debug, theo dõi quá trình đo đạc tôm trên băng chuyền.
+Các hàm vẽ & xuất ảnh debug cho từng bước đo tôm trên băng chuyền.
 
-Thay đổi so với phiên bản cũ:
-  - Tất cả hàm save* và draw_f6_result đều trả về dict chứa đường dẫn
-    tới các file ảnh đã lưu, để F6 đưa vào JSON output.
-  - Đơn vị đo cố định là mm.
-  - _id_dir nhận run_dir (thư mục output theo timestamp) thay vì dùng OUTPUT_DIR.
+  save_f3_debug  – Lưu ảnh các khung chạm vạch và frame tốt nhất.
+  save_f4_debug  – Lưu ảnh overlay phân đoạn và crop-mask nhị phân.
+  save_f5_debug  – Lưu ảnh skeleton (medial axis) và đường BFS dài nhất.
+  draw_f6_result – Vẽ ảnh kết quả cuối với nhãn chiều dài (px + mm).
 """
-
 
 from pathlib import Path
 
@@ -17,6 +15,7 @@ import numpy as np
 
 from config import COLOR, CONVEYOR_VERTICAL, SCALE
 from flow_utils import ensure_dir
+from logger_setup import get_logger
 
 
 def get_track_color(track_id: int) -> tuple[int, int, int]:
@@ -29,7 +28,7 @@ def _id_dir(run_dir: str, source_stem: str, track_id: int) -> Path:
     return p
 
 
-# F3 
+# F3
 def save_f3_debug(
     run_dir: str,
     source_stem: str, track_id: int,
@@ -46,6 +45,7 @@ def save_f3_debug(
             "f3_touches": [str, ...]  # danh sách đường dẫn ảnh F3_Touch
         }
     """
+    log         = get_logger()
     out_dir     = _id_dir(run_dir, source_stem, track_id)
     track_color = get_track_color(track_id)
     touch_paths: list[str] = []
@@ -66,11 +66,11 @@ def save_f3_debug(
     best_path = str(out_dir / f"F3_Best_F{best_frame_idx}_{best_area:.0f}px.jpg")
     cv2.imwrite(best_path, masked_img)
 
-    print(f"[F3-debug] ID {track_id}: đã lưu {len(touch_records)} khung chạm vạch")
+    log.info(f"[F3-debug] ID {track_id}: đã lưu {len(touch_records)} khung chạm vạch")
     return {"f3_best": best_path, "f3_touches": touch_paths}
 
 
-# F4 
+# F4
 def save_f4_debug(
     item: dict,
     mask_full: np.ndarray,
@@ -83,6 +83,7 @@ def save_f4_debug(
     Returns:
         {"f4_seg": str, "f4_mask": str}
     """
+    log         = get_logger()
     out_dir     = _id_dir(item["run_dir"], item["source_stem"], item["track_id"])
     tid, fidx   = item["track_id"], item["frame_idx"]
     track_color = get_track_color(tid)
@@ -106,11 +107,11 @@ def save_f4_debug(
     cv2.imwrite(seg_path,  seg_vis)
     cv2.imwrite(mask_path, crop_vis)
 
-    print(f"[F4-debug] ID {tid}: đã lưu ảnh phân đoạn + mask vùng cắt")
+    log.info(f"[F4-debug] ID {tid}: đã lưu ảnh phân đoạn + mask vùng cắt")
     return {"f4_seg": seg_path, "f4_mask": mask_path}
 
 
-# F5 
+# F5
 def save_f5_debug(
     item: dict,
     skeleton: np.ndarray,
@@ -122,6 +123,7 @@ def save_f5_debug(
     Returns:
         {"f5_skel": str, "f5_bfs": str}
     """
+    log            = get_logger()
     out_dir        = _id_dir(item["run_dir"], item["source_stem"], item["track_id"])
     tid, fidx      = item["track_id"], item["frame_idx"]
     skel_h, skel_w = skeleton.shape
@@ -138,11 +140,11 @@ def save_f5_debug(
     cv2.imwrite(skel_path, ma_vis)
     cv2.imwrite(bfs_path,  bfs_vis)
 
-    print(f"[F5-debug] ID {tid}: đã lưu trục giữa (Skel) + đường BFS dài nhất")
+    log.info(f"[F5-debug] ID {tid}: đã lưu trục giữa (Skel) + đường BFS dài nhất")
     return {"f5_skel": skel_path, "f5_bfs": bfs_path}
 
 
-# F6 
+# F6
 def draw_f6_result(item: dict) -> str:
     """
     Vẽ ảnh kết quả cuối: đường tham chiếu, overlay tôm, skeleton, nhãn đo.
@@ -151,6 +153,7 @@ def draw_f6_result(item: dict) -> str:
     Returns:
         str  — đường dẫn file ảnh F6_Result đã lưu.
     """
+    log          = get_logger()
     pixel_length = item["pixel_length"]
     real_length  = pixel_length * SCALE
     tid, fidx    = item["track_id"], item["frame_idx"]
@@ -187,10 +190,8 @@ def draw_f6_result(item: dict) -> str:
     overlay = roi.copy()
     overlay[crop_mask > 0] = clr
     cv2.addWeighted(overlay, 0.4, roi, 0.6, 0, roi)
-    canvas[y1:y2, x1:x2]                = roi
     canvas[y1:y2, x1:x2][path_mask > 0] = (255, 255, 255)
 
-    # Nhãn: "672.4px  235.3mm  [ID:1]"
     txt    = f"{pixel_length:.1f}px  {real_length:.1f}mm  [ID:{tid}]"
     tx, ty = int(item["cx_label"]), max(int(item["cy_label"]) - 10, 20)
     cv2.putText(canvas, txt, (tx, ty),
@@ -200,5 +201,5 @@ def draw_f6_result(item: dict) -> str:
 
     out_path = str(out_dir / f"F6_Result_F{fidx}_{pixel_length:.0f}px.jpg")
     cv2.imwrite(out_path, canvas)
-    print(f"[F6] ID {tid}: kết quả cuối đã lưu -> {Path(out_path).name}")
+    log.info(f"[F6] ID {tid}: kết quả cuối đã lưu -> {Path(out_path).name}")
     return out_path

@@ -1,13 +1,13 @@
 """
 skeleton_utils.py
 
-Xử lý hình thái học (Morphology) để đo chiều dài tôm.
-Dựa trên lớp mặt nạ (mask) của thân tôm, thuật toán sẽ:
-  1. Trích xuất trục giữa thân tôm (Medial Axis / Skeleton).
-  2. Dùng thuật toán duyệt đồ thị BFS 2 lần để tìm đường cong dài nhất dọc theo thân tôm, từ đó suy ra chiều dài.
+Tính chiều dài tôm từ skeleton (medial axis) đã được tính sẵn ở F5.
+Dùng BFS 2 lần trên skeleton để tìm đường đi dài nhất giữa 2 đầu mút,
+từ đó suy ra chiều dài thân tôm tính bằng pixel.
 """
-from collections import deque
 import math
+from collections import deque
+
 import numpy as np
 
 DIRECTIONS = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
@@ -37,7 +37,7 @@ def _bfs(skeleton: np.ndarray, start: tuple) -> tuple[tuple, dict]:
     return farthest, parent
 
 
-def bfs_2_times(skeleton: np.ndarray) -> tuple[np.ndarray, float]:
+def find_longest_path(skeleton: np.ndarray) -> tuple[np.ndarray, float]:
     if not skeleton.any():
         return np.zeros_like(skeleton, dtype=bool), 0.0
 
