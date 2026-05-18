@@ -1,0 +1,10 @@
+<!doctype html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ShrimpMeasure</title><link rel="stylesheet" href="/static/style.css"></head>
+<body>
+<header><h1>SHRIMP MEASURE</h1><span id="scaleChip">SCALE: --</span></header>
+<main>
+<section><h2>Upload</h2><input id="fileInput" type="file" multiple><button id="uploadBtn">Tải lên</button><button id="runBtn">Chạy pipeline</button><ul id="files"></ul></section>
+<section><h2>Kết quả</h2><select id="runSel"></select><select id="srcSel"></select><button id="loadBtn">Tải dữ liệu</button>
+<table><thead><tr><th>ID</th><th>Frame</th><th>Pixel</th><th>Đo được</th><th>Thực tế(mm)</th><th>Scale</th></tr></thead><tbody id="rows"></tbody></table>
+<div id="calPanel" hidden><button id="calcBtn">TÍNH SCALE</button><pre id="calOut"></pre></div>
+</section></main>
+<script src="/static/app.js"></script></body></html>
