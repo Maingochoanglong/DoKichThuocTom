@@ -1,0 +1,12 @@
+__pycache__/
+.conda/
+.vscode/
+input/
+output/
+model/
+openvino_cache/
+benchmark/
+test/
+test1/
+compare_outputs.py
+extract_largest_shrimp.py

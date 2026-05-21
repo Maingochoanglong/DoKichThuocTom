@@ -132,7 +132,7 @@ def flow2_detect_track(model_det, q_f1_f2, q_f2_f3, flow_times: dict) -> None:
 
         results = model_det.predict(
             source=item["frame"],
-            verbose=False, conf=CONF_DET, device="intel:gpu",
+            verbose=False, conf=CONF_DET, device="intel:gpu", iou=0.3,
         )[0]
         detections = sv.Detections.from_ultralytics(results)
 
