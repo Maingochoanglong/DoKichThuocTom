@@ -26,7 +26,7 @@ COLOR = [
 
 
 # Thư mục chứa ảnh/video đầu vào. Upload từ giao diện web sẽ lưu vào đây.
-INPUT_DIR  = 'input'
+INPUT_DIR  = 'scale'
 
 # Thư mục chứa kết quả chạy pipeline: pipeline.log, JSON kết quả, ảnh debug và thư mục run.
 OUTPUT_DIR = 'output'
@@ -44,10 +44,10 @@ CLEAR_INPUT  = False
 CHUNK_MODE = False
 
 # Đường dẫn model phát hiện tôm. Có thể là file .pt hoặc thư mục OpenVINO model.
-MODEL_DET = 'model/yolov8n_v60_openvino_model'
+MODEL_DET = 'model/yolov8_det_v65_openvino_model'
 
 # Đường dẫn model phân đoạn tôm để tạo mask thân tôm. Có thể là file .pt hoặc thư mục OpenVINO model.
-MODEL_SEG = 'model/yolov8n-seg_shrimp_v54_openvino_model'
+MODEL_SEG = 'model/yolov8n-seg_shrimp_openvino_model'
 
 # Hệ số quy đổi pixel -> mm.
 # Ví dụ SCALE = 0.35 nghĩa là 1 pixel tương ứng 0.35 mm.
@@ -70,7 +70,7 @@ CONF_SEG = 0.5
 
 # Số pixel nới rộng quanh bounding box trước khi cắt vùng tôm để xử lý tiếp.
 # Giá trị lớn giúp tránh cắt cụt đầu/đuôi, nhưng quá lớn có thể kéo thêm nhiễu nền.
-BBOX_PAD = 10
+BBOX_PAD = 5
 
 # Số lần chạm vạch tham chiếu tối thiểu trước khi một track được xem là đủ điều kiện đo.
 REQUIRED_TOUCHES = 3

@@ -7,8 +7,7 @@ const state = {
   logOffset: 0,
   selectedRun: "",
   inputFiles: [],
-  inputPage: 1,
-  inputPageSize: 10,
+  inputPageSize: 5,
   resultPage: 1,
   resultPageSize: 25,
   scaleMeasurements: new Map(),
@@ -21,24 +20,34 @@ const state = {
   imagePanY: 0,
   imageDragging: false,
   imageDragStart: null,
-  folderTarget: null,
-  folderCurrent: ".",
-  folderParent: null,
   confirmResolver: null,
 };
 
 const $ = (id) => document.getElementById(id);
 
+const heroIcon = (paths, width = "1.5") => (
+  `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${width}" aria-hidden="true">` +
+  paths.map((d) => `<path stroke-linecap="round" stroke-linejoin="round" d="${d}" />`).join("") +
+  `</svg>`
+);
+
+const solidIcon = (paths) => (
+  `<svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">` +
+  paths.map((d) => `<path d="${d}" />`).join("") +
+  `</svg>`
+);
+
 const icons = {
-  play: `<svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4.5 5.65c0-1.43 1.53-2.34 2.79-1.66l12.13 6.35a1.87 1.87 0 0 1 0 3.32L7.29 20.01c-1.26.66-2.79-.25-2.79-1.67V5.65Z" clip-rule="evenodd" /></svg>`,
-  trash: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.97-3.21c.34.05.68.1 1.02.16m-1.02-.16L18.16 19.67A2.25 2.25 0 0 1 15.91 21H8.09a2.25 2.25 0 0 1-2.24-2.08L4.77 5.79m14.46 0a48.1 48.1 0 0 0-3.48-.36m-10.98.36c-.34.05-.68.1-1.02.16m1.02-.16a48.1 48.1 0 0 1 3.48-.36m7.5 0V4.5A1.5 1.5 0 0 0 14.25 3h-4.5A1.5 1.5 0 0 0 8.25 4.5v.93m7.5 0a49 49 0 0 0-7.5 0" /></svg>`,
-  image: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.16-5.16a2.25 2.25 0 0 1 3.18 0l5.16 5.16m-1.5-1.5 1.41-1.41a2.25 2.25 0 0 1 3.18 0l2.91 2.91m-18 3.75h16.5A1.5 1.5 0 0 0 21.75 18V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm13.5-11.25h.01v.01h-.01V8.25Z" /></svg>`,
-  folder: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V6.75A2.25 2.25 0 0 1 4.5 4.5h5.38c.6 0 1.17.24 1.59.66l1.12 1.12c.42.42 1 .66 1.59.66h5.32a2.25 2.25 0 0 1 2.25 2.25v3.56" /><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75h16.5l-1.2 7.2a2.25 2.25 0 0 1-2.22 1.88H5.93a2.25 2.25 0 0 1-2.22-1.88l-.96-5.76" /></svg>`,
-  plus: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>`,
-  expand: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75h6m-6 0v6m0-6 6.75 6.75m9.75-6.75h-6m6 0v6m0-6-6.75 6.75M3.75 20.25h6m-6 0v-6m0 6 6.75-6.75m9.75 6.75h-6m6 0v-6m0 6-6.75-6.75" /></svg>`,
-  collapse: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75 4.5 4.5m0 0v5.25M4.5 4.5h5.25m4.5 5.25 5.25-5.25m0 0v5.25M19.5 4.5h-5.25m-4.5 9.75L4.5 19.5m0 0v-5.25m0 5.25h5.25m4.5-5.25 5.25 5.25m0 0v-5.25m0 5.25h-5.25" /></svg>`,
-  check: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>`,
-  warning: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4.5m0 3h.01M10.34 3.96 2.77 17.1A1.95 1.95 0 0 0 4.46 20h15.08a1.95 1.95 0 0 0 1.69-2.9L13.66 3.96a1.91 1.91 0 0 0-3.32 0Z" /></svg>`,
+  play: heroIcon(["M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"]),
+  trash: heroIcon(["m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"]),
+  image: heroIcon(["m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"]),
+  folder: heroIcon(["M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"]),
+  plus: heroIcon(["M12 4.5v15m7.5-7.5h-15"]),
+  expand: heroIcon(["M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"]),
+  collapse: heroIcon(["M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25"]),
+  check: heroIcon(["m4.5 12.75 6 6 9-13.5"], "1.8"),
+  fileSolid: solidIcon(["M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V7.875L13.875 1.5h-8.25ZM13.5 3.31v3.94c0 .621.504 1.125 1.125 1.125h3.94L13.5 3.31Z"]),
+  warning: heroIcon(["M12 9v4.5m0 3h.01M10.34 3.96 2.77 17.1A1.95 1.95 0 0 0 4.46 20h15.08a1.95 1.95 0 0 0 1.69-2.9L13.66 3.96a1.91 1.91 0 0 0-3.32 0Z"], "1.8"),
 };
 
 async function requestJson(url, options = {}) {
@@ -248,6 +257,11 @@ function setRunning(running) {
   });
 
   $("fileInput").disabled = running;
+  $("folderInput").disabled = running;
+  ["chooseFileBtn", "chooseFolderBtn"].forEach((id) => {
+    const button = $(id);
+    if (button) button.disabled = running;
+  });
   $("dropZone").classList.toggle("disabled", running);
   document.querySelectorAll("#configForm input, #configForm button, #sizeForm input, #sizeForm button")
     .forEach((node) => {
@@ -522,6 +536,7 @@ async function uploadFiles(files) {
     toast(error.message, "error");
   } finally {
     $("fileInput").value = "";
+    $("folderInput").value = "";
   }
 }
 
@@ -529,50 +544,32 @@ async function loadInputFiles() {
   const payload = await requestJson("/api/files/input");
   state.inputFiles = payload.files || [];
   state.inputPageSize = Number($("inputPageSize")?.value) || state.inputPageSize;
-  $("inputCount").textContent = `${state.inputFiles.length} file`;
   renderInputFiles();
-  return;
-  const list = $("fileList");
-  list.innerHTML = "";
-  $("inputCount").textContent = `${payload.files.length} file`;
-  if (!payload.files.length) {
-    list.innerHTML = `<div class="empty-state compact">Input đang trống</div>`;
-    return;
-  }
-  payload.files.forEach((file) => {
-    const row = document.createElement("div");
-    row.className = "file-row";
-    row.innerHTML = `
-      <div class="min-w-0">
-        <div class="file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
-        <span class="file-meta">${escapeHtml(file.suffix || "file")} · ${formatBytes(file.size)}</span>
-      </div>
-      <button class="btn btn-secondary" type="button" data-delete-file="${escapeHtml(file.name)}" aria-label="Xóa file ${escapeHtml(file.name)}">${icons.trash} Xóa</button>
-    `;
-    list.appendChild(row);
-  });
 }
 
 function renderInputFiles() {
   const list = $("fileList");
   const pager = $("inputPager");
   const total = state.inputFiles.length;
+  const visibleCount = Number(state.inputPageSize) || 5;
   list.innerHTML = "";
+  list.style.maxHeight = "";
+  list.classList.remove("scrollable");
 
   if (!total) {
     list.innerHTML = `<div class="empty-state compact">Input đang trống</div>`;
-    if (pager) pager.hidden = true;
+    if (pager) pager.hidden = false;
+    $("inputPageInfo").textContent = "0 file";
     return;
   }
 
-  const windowInfo = pageWindow(total, state.inputPage, state.inputPageSize);
-  state.inputPage = windowInfo.currentPage;
-  state.inputFiles.slice(windowInfo.start, windowInfo.end).forEach((file) => {
+  state.inputFiles.forEach((file) => {
     const row = document.createElement("div");
     row.className = "file-row";
     row.innerHTML = `
-      <div class="min-w-0">
-        <div class="file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
+      <div class="file-main" title="${escapeHtml(file.name)} ${escapeHtml(file.suffix || "file")} · ${formatBytes(file.size)}">
+        <span class="file-icon">${icons.fileSolid}</span>
+        <span class="file-name">${escapeHtml(file.name)}</span>
         <span class="file-meta">${escapeHtml(file.suffix || "file")} · ${formatBytes(file.size)}</span>
       </div>
       <button class="btn btn-secondary" type="button" data-delete-file="${escapeHtml(file.name)}" aria-label="Xóa file ${escapeHtml(file.name)}">${icons.trash} Xóa</button>
@@ -580,10 +577,10 @@ function renderInputFiles() {
     list.appendChild(row);
   });
 
+  list.style.maxHeight = `${visibleCount * 50 + Math.max(0, visibleCount - 1) * 8}px`;
+  list.classList.toggle("scrollable", total > visibleCount);
   if (pager) pager.hidden = false;
-  $("inputPageInfo").textContent = `${windowInfo.start + 1}-${windowInfo.end} / ${total} · Trang ${windowInfo.currentPage}/${windowInfo.totalPages}`;
-  $("inputPrevPage").disabled = windowInfo.currentPage <= 1;
-  $("inputNextPage").disabled = windowInfo.currentPage >= windowInfo.totalPages;
+  $("inputPageInfo").textContent = `${total} file`;
 }
 
 async function deleteInputFile(name) {
@@ -1006,49 +1003,6 @@ async function applyScale() {
   }
 }
 
-async function loadFolder(path = ".") {
-  const payload = await requestJson(`/api/filesystem/directories?path=${encodeURIComponent(path || ".")}`);
-  state.folderCurrent = payload.current;
-  state.folderParent = payload.parent;
-  $("folderCurrent").textContent = `${payload.current} · ${payload.absolute_path}`;
-  $("folderUpBtn").disabled = !payload.parent;
-  const list = $("folderList");
-  list.innerHTML = "";
-  if (!payload.directories.length) {
-    list.innerHTML = `<div class="folder-row">Không có thư mục con.</div>`;
-    return;
-  }
-  payload.directories.forEach((dir) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "folder-row";
-    button.dataset.openFolder = dir.path;
-    button.innerHTML = `
-      <span class="inline-flex min-w-0 items-center gap-2 truncate">${icons.folder}<span class="truncate">${escapeHtml(dir.name)}</span></span>
-      <small class="small-mono truncate">${escapeHtml(dir.path)}</small>
-    `;
-    list.appendChild(button);
-  });
-}
-
-async function openFolderPicker(targetId) {
-  state.folderTarget = targetId;
-  const startPath = $(targetId).value.trim() || ".";
-  try {
-    await loadFolder(startPath);
-    showModal("folderModal");
-  } catch (error) {
-    toast(error.message, "error");
-  }
-}
-
-function chooseCurrentFolder() {
-  if (!state.folderTarget) return;
-  $(state.folderTarget).value = state.folderCurrent;
-  hideModal("folderModal");
-  toast("Đã chọn thư mục");
-}
-
 function applyImageTransform() {
   const image = $("modalImage");
   if (!image) return;
@@ -1198,31 +1152,6 @@ function bindModalEvents() {
   });
 }
 
-function pickedPathFromFile(file, mode) {
-  if (!file) return "";
-  const browserPath = file.path || "";
-  if (browserPath) return browserPath.replaceAll("\\", "/");
-  const relativePath = file.webkitRelativePath || "";
-  if (mode === "folder" && relativePath) {
-    return relativePath.split("/").filter(Boolean)[0] || "";
-  }
-  return relativePath || file.name || "";
-}
-
-function handlePathPicker(event) {
-  const input = event.target;
-  const target = $(input.dataset.pathPicker);
-  if (!target) return;
-  const picked = pickedPathFromFile(input.files?.[0], input.dataset.pathMode);
-  if (picked) {
-    const currentParent = target.value.includes("/") ? target.value.split("/").slice(0, -1).join("/") : "";
-    target.value = currentParent && !picked.includes("/") ? `${currentParent}/${picked}` : picked;
-    target.dispatchEvent(new Event("input", {bubbles: true}));
-    toast(`Đã chọn ${target.value}`);
-  }
-  input.value = "";
-}
-
 function bindEvents() {
   bindModalEvents();
   const confirmCancelBtn = $("confirmCancelBtn");
@@ -1258,17 +1187,15 @@ function bindEvents() {
   $("applyScaleBtn").addEventListener("click", applyScale);
   $("cancelScaleBtn").addEventListener("click", cancelScaleMode);
   $("fileInput").addEventListener("change", (event) => uploadFiles(event.target.files));
+  $("folderInput").addEventListener("change", (event) => uploadFiles(event.target.files));
+  $("chooseFileBtn").addEventListener("click", () => {
+    if (!state.running) $("fileInput").click();
+  });
+  $("chooseFolderBtn").addEventListener("click", () => {
+    if (!state.running) $("folderInput").click();
+  });
   $("inputPageSize").addEventListener("change", () => {
-    state.inputPageSize = Number($("inputPageSize").value) || 10;
-    state.inputPage = 1;
-    renderInputFiles();
-  });
-  $("inputPrevPage").addEventListener("click", () => {
-    state.inputPage -= 1;
-    renderInputFiles();
-  });
-  $("inputNextPage").addEventListener("click", () => {
-    state.inputPage += 1;
+    state.inputPageSize = Number($("inputPageSize").value) || 5;
     renderInputFiles();
   });
   $("refreshResults").addEventListener("click", async () => {
@@ -1314,20 +1241,6 @@ function bindEvents() {
     $("expandLog").innerHTML = `${expanded ? icons.collapse : icons.expand} ${expanded ? "Thu gọn" : "Mở rộng"}`;
   });
 
-  document.querySelectorAll("[data-folder-target]").forEach((button) => {
-    button.addEventListener("click", () => openFolderPicker(button.dataset.folderTarget));
-  });
-  document.querySelectorAll("[data-path-picker]").forEach((input) => {
-    input.addEventListener("change", handlePathPicker);
-  });
-  $("folderList").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-open-folder]");
-    if (button) loadFolder(button.dataset.openFolder);
-  });
-  $("folderUpBtn").addEventListener("click", () => {
-    if (state.folderParent) loadFolder(state.folderParent);
-  });
-  $("folderUseCurrentBtn").addEventListener("click", chooseCurrentFolder);
   $("imageZoomOut").addEventListener("click", () => setImageZoom(state.imageZoom - 0.25));
   $("imageZoomIn").addEventListener("click", () => setImageZoom(state.imageZoom + 0.25));
   $("imageZoomReset").addEventListener("click", resetImageZoom);

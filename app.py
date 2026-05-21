@@ -461,6 +461,39 @@ def _relative_workspace_path(path: Path) -> str:
     return path.relative_to(BASE_DIR).as_posix()
 
 
+def _pick_local_path(mode: str, initial: str = "") -> Path | None:
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except Exception as exc:  # pragma: no cover - depends on local desktop runtime
+        raise RuntimeError("Khong mo duoc hop thoai chon duong dan tren may nay") from exc
+
+    initial_path = Path(initial) if initial else BASE_DIR
+    if not initial_path.is_absolute():
+        initial_path = (BASE_DIR / initial_path).resolve()
+    if initial_path.is_file():
+        initial_dir = initial_path.parent
+    elif initial_path.exists():
+        initial_dir = initial_path
+    else:
+        initial_dir = BASE_DIR
+
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    try:
+        if mode == "folder":
+            selected = filedialog.askdirectory(initialdir=str(initial_dir), title="Chon folder")
+        else:
+            selected = filedialog.askopenfilename(initialdir=str(initial_dir), title="Chon file")
+    finally:
+        root.destroy()
+
+    if not selected:
+        return None
+    return _workspace_path(selected)
+
+
 def _run_dirs() -> list[Path]:
     output_dir = _output_dir()
     if not output_dir.exists():
@@ -749,6 +782,29 @@ def put_config():
     return jsonify(_jsonable_config())
 
 
+@app.post("/api/config/pick-path")
+def pick_config_path():
+    payload = request.get_json(force=True, silent=True) or {}
+    key = str(payload.get("key") or "").strip()
+    mode = str(payload.get("mode") or "file").strip()
+    if key not in {"MODEL_DET", "MODEL_SEG", "INPUT_DIR", "OUTPUT_DIR"}:
+        return jsonify({"error": "Hang so config khong hop le"}), 400
+    if mode not in {"file", "folder"}:
+        return jsonify({"error": "Kieu chon duong dan khong hop le"}), 400
+
+    current = str(_jsonable_config().get(key, ""))
+    try:
+        selected = _pick_local_path(mode, current)
+    except (RuntimeError, ValueError) as exc:
+        return jsonify({"error": str(exc)}), 400
+    if selected is None:
+        return jsonify({"path": None, "cancelled": True})
+
+    if key in {"INPUT_DIR", "OUTPUT_DIR"} and selected.is_file():
+        selected = selected.parent
+    return jsonify({"path": _relative_workspace_path(selected), "cancelled": False})
+
+
 @app.patch("/api/config/scale")
 def patch_scale():
     try:
@@ -920,7 +976,7 @@ def output_file(filename: str):
 if __name__ == "__main__":
     _ensure_runtime_dirs()
     host = os.environ.get("HOST", "127.0.0.1")
-    port = int(os.environ.get("PORT", "5001"))
+    port = int(os.environ.get("PORT", "3000"))
     debug = os.environ.get("FLASK_DEBUG", "1").strip().lower() in {"1", "true", "yes", "on"}
     print(f"Shrimp Measure UI: http://{host}:{port}", flush=True)
     app.run(host=host, port=port, debug=debug, use_reloader=False)

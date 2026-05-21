@@ -32,7 +32,7 @@
         --color-console-text: #a3e635;
       }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260520-save-confirm">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260522-file-solid">
   </head>
   <body class="min-h-screen overflow-x-hidden bg-shop-floor text-ink antialiased">
     <div class="grid min-h-screen min-w-0 grid-rows-[56px_minmax(0,1fr)]">
@@ -52,48 +52,38 @@
           <section class="industrial-section">
             <div class="mb-2 flex min-w-0 items-center justify-between gap-2">
               <h2 class="section-title">Nạp dữ liệu</h2>
-              <span class="small-mono" id="inputCount">0 file</span>
             </div>
-            <label class="drop-zone" id="dropZone" for="fileInput">
+            <div class="drop-zone" id="dropZone" aria-label="Kéo file hoặc folder vào đây">
               <input id="fileInput" name="files" type="file" multiple hidden>
+              <input id="folderInput" name="folder" type="file" webkitdirectory directory multiple hidden>
               <svg class="h-10 w-10 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-.52-8.97 5.25 5.25 0 0 1 10.33-2.15 3.75 3.75 0 0 1 .68 7.44" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
               </svg>
-              <span class="font-display text-lg font-bold uppercase">Kéo file vào đây</span>
-              <strong>Chọn file</strong>
+              <span class="font-display text-lg font-bold uppercase">Kéo file hoặc folder vào đây</span>
+              <div class="input-picker-actions">
+                <button class="input-picker-btn" id="chooseFileBtn" type="button">File</button>
+                <button class="input-picker-btn" id="chooseFolderBtn" type="button">Folder</button>
+              </div>
               <small>JPG, PNG, MP4, AVI, MOV</small>
-            </label>
-            <div class="file-list" id="fileList"></div>
-            <div class="pager-bar compact" id="inputPager" hidden>
-              <span class="pager-info" id="inputPageInfo">0-0 / 0</span>
+            </div>
+            <div class="pager-bar compact" id="inputPager">
+              <span class="pager-info" id="inputPageInfo">0 file</span>
               <label class="pager-size" for="inputPageSize">
-                <span>Dòng/trang</span>
+                <span>Hiển thị</span>
                 <select class="form-select pager-select" id="inputPageSize">
-                  <option value="5">5</option>
-                  <option value="10" selected>10</option>
-                  <option value="20">20</option>
-                  <option value="50">50</option>
+                  <option value="5" selected>5</option>
+                  <option value="10">10</option>
+                  <option value="25">25</option>
                 </select>
               </label>
-              <div class="pager-actions">
-                <button class="icon-button pager-btn" id="inputPrevPage" type="button" aria-label="Trang input trước">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6" />
-                  </svg>
-                </button>
-                <button class="icon-button pager-btn" id="inputNextPage" type="button" aria-label="Trang input sau">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" />
-                  </svg>
-                </button>
-              </div>
             </div>
+            <div class="file-list" id="fileList"></div>
           </section>
 
           <section class="industrial-section border-t-2 border-line-heavy">
             <button class="btn btn-run btn-primary w-full" id="runBtn" type="button">
-              <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M4.5 5.65c0-1.43 1.53-2.34 2.79-1.66l12.13 6.35a1.87 1.87 0 0 1 0 3.32L7.29 20.01c-1.26.66-2.79-.25-2.79-1.67V5.65Z" clip-rule="evenodd" />
+              <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
               </svg>
               Chạy pipeline
             </button>
@@ -105,8 +95,8 @@
               <summary class="industrial-summary">
                 <span class="inline-flex min-w-0 items-center gap-2">
                   <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.59 3.2c.63-1.07 2.19-1.07 2.82 0l.2.34c.4.68 1.2.99 1.96.76l.37-.11c1.18-.36 2.28.74 1.92 1.92l-.11.37c-.23.76.08 1.56.76 1.96l.34.2c1.07.63 1.07 2.19 0 2.82l-.34.2c-.68.4-.99 1.2-.76 1.96l.11.37c.36 1.18-.74 2.28-1.92 1.92l-.37-.11c-.76-.23-1.56.08-1.96.76l-.2.34c-.63 1.07-2.19 1.07-2.82 0l-.2-.34c-.4-.68-1.2-.99-1.96-.76l-.37.11c-1.18.36-2.28-.74-1.92-1.92l.11-.37c.23-.76-.08-1.56-.76-1.96l-.34-.2c-1.07-.63-1.07-2.19 0-2.82l.34-.2c.68-.4.99-1.2.76-1.96l-.11-.37c-.36-1.18.74-2.28 1.92-1.92l.37.11c.76.23 1.56-.08 1.96-.76l.2-.34Z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 12.75a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                   </svg>
                   <span class="truncate">Cấu hình xử lý</span>
                 </span>
@@ -157,89 +147,25 @@
 
                 <div>
                   <label class="form-label" for="cfg_MODEL_DET">MODEL_DET</label>
-                  <div class="field-with-action">
-                    <input class="form-control" id="cfg_MODEL_DET" type="text">
-                    <div class="path-pickers">
-                      <label class="btn btn-secondary path-picker-btn">
-                        File
-                        <input data-path-picker="cfg_MODEL_DET" data-path-mode="file" type="file" hidden>
-                      </label>
-                      <label class="btn btn-secondary path-picker-btn">
-                        Folder
-                        <input data-path-picker="cfg_MODEL_DET" data-path-mode="folder" type="file" webkitdirectory directory hidden>
-                      </label>
-                    </div>
-                    <button class="btn btn-secondary" type="button" data-folder-target="cfg_MODEL_DET">
-                      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V6.75A2.25 2.25 0 0 1 4.5 4.5h5.38c.6 0 1.17.24 1.59.66l1.12 1.12c.42.42 1 .66 1.59.66h5.32a2.25 2.25 0 0 1 2.25 2.25v3.56" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75h16.5l-1.2 7.2a2.25 2.25 0 0 1-2.22 1.88H5.93a2.25 2.25 0 0 1-2.22-1.88l-.96-5.76" />
-                      </svg>
-                      Chọn
-                    </button>
-                  </div>
+                  <input class="form-control" id="cfg_MODEL_DET" type="text">
                   <div class="form-help">Đường dẫn model phát hiện tôm. Có thể là thư mục OpenVINO model hoặc file model tương thích.</div>
                 </div>
 
                 <div>
                   <label class="form-label" for="cfg_MODEL_SEG">MODEL_SEG</label>
-                  <div class="field-with-action">
-                    <input class="form-control" id="cfg_MODEL_SEG" type="text">
-                    <div class="path-pickers">
-                      <label class="btn btn-secondary path-picker-btn">
-                        File
-                        <input data-path-picker="cfg_MODEL_SEG" data-path-mode="file" type="file" hidden>
-                      </label>
-                      <label class="btn btn-secondary path-picker-btn">
-                        Folder
-                        <input data-path-picker="cfg_MODEL_SEG" data-path-mode="folder" type="file" webkitdirectory directory hidden>
-                      </label>
-                    </div>
-                    <button class="btn btn-secondary" type="button" data-folder-target="cfg_MODEL_SEG">
-                      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V6.75A2.25 2.25 0 0 1 4.5 4.5h5.38c.6 0 1.17.24 1.59.66l1.12 1.12c.42.42 1 .66 1.59.66h5.32a2.25 2.25 0 0 1 2.25 2.25v3.56" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75h16.5l-1.2 7.2a2.25 2.25 0 0 1-2.22 1.88H5.93a2.25 2.25 0 0 1-2.22-1.88l-.96-5.76" />
-                      </svg>
-                      Chọn
-                    </button>
-                  </div>
+                  <input class="form-control" id="cfg_MODEL_SEG" type="text">
                   <div class="form-help">Đường dẫn model phân đoạn tôm để tạo mask thân tôm trước khi đo chiều dài.</div>
                 </div>
 
                 <div>
                   <label class="form-label" for="cfg_INPUT_DIR">INPUT_DIR</label>
-                  <div class="field-with-action">
-                    <input class="form-control" id="cfg_INPUT_DIR" type="text">
-                    <label class="btn btn-secondary path-picker-btn">
-                      Folder
-                      <input data-path-picker="cfg_INPUT_DIR" data-path-mode="folder" type="file" webkitdirectory directory hidden>
-                    </label>
-                    <button class="btn btn-secondary" type="button" data-folder-target="cfg_INPUT_DIR">
-                      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V6.75A2.25 2.25 0 0 1 4.5 4.5h5.38c.6 0 1.17.24 1.59.66l1.12 1.12c.42.42 1 .66 1.59.66h5.32a2.25 2.25 0 0 1 2.25 2.25v3.56" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75h16.5l-1.2 7.2a2.25 2.25 0 0 1-2.22 1.88H5.93a2.25 2.25 0 0 1-2.22-1.88l-.96-5.76" />
-                      </svg>
-                      Chọn
-                    </button>
-                  </div>
+                  <input class="form-control" id="cfg_INPUT_DIR" type="text">
                   <div class="form-help">Thư mục chứa ảnh/video đầu vào. File upload trên giao diện sẽ được lưu vào thư mục này.</div>
                 </div>
 
                 <div>
                   <label class="form-label" for="cfg_OUTPUT_DIR">OUTPUT_DIR</label>
-                  <div class="field-with-action">
-                    <input class="form-control" id="cfg_OUTPUT_DIR" type="text">
-                    <label class="btn btn-secondary path-picker-btn">
-                      Folder
-                      <input data-path-picker="cfg_OUTPUT_DIR" data-path-mode="folder" type="file" webkitdirectory directory hidden>
-                    </label>
-                    <button class="btn btn-secondary" type="button" data-folder-target="cfg_OUTPUT_DIR">
-                      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V6.75A2.25 2.25 0 0 1 4.5 4.5h5.38c.6 0 1.17.24 1.59.66l1.12 1.12c.42.42 1 .66 1.59.66h5.32a2.25 2.25 0 0 1 2.25 2.25v3.56" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75h16.5l-1.2 7.2a2.25 2.25 0 0 1-2.22 1.88H5.93a2.25 2.25 0 0 1-2.22-1.88l-.96-5.76" />
-                      </svg>
-                      Chọn
-                    </button>
-                  </div>
+                  <input class="form-control" id="cfg_OUTPUT_DIR" type="text">
                   <div class="form-help">Thư mục chứa pipeline.log, JSON kết quả, ảnh debug và các thư mục run sau khi xử lý.</div>
                 </div>
 
@@ -283,8 +209,7 @@
 
                 <button class="btn btn-primary w-full" type="submit">
                   <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75v3a.75.75 0 0 1-.75.75h-7.5a.75.75 0 0 1-.75-.75v-3m9 0h1.13c.6 0 1.17.24 1.59.66l.87.87c.42.42.66 1 .66 1.59v12.38A2.25 2.25 0 0 1 18 21H6a2.25 2.25 0 0 1-2.25-2.25V6A2.25 2.25 0 0 1 6 3.75h10.5Z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15.75h7.5M8.25 18h7.5" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                   </svg>
                   Lưu config
                 </button>
@@ -335,8 +260,7 @@
                 </div>
                 <button class="btn btn-primary w-full" type="submit">
                   <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75v3a.75.75 0 0 1-.75.75h-7.5a.75.75 0 0 1-.75-.75v-3m9 0h1.13c.6 0 1.17.24 1.59.66l.87.87c.42.42.66 1 .66 1.59v12.38A2.25 2.25 0 0 1 18 21H6a2.25 2.25 0 0 1-2.25-2.25V6A2.25 2.25 0 0 1 6 3.75h10.5Z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15.75h7.5M8.25 18h7.5" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                   </svg>
                   Lưu phân loại
                 </button>
@@ -359,7 +283,7 @@
                 </select>
                 <button class="btn btn-warning" id="scaleModeBtn" type="button">
                   <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5h16.5m-16.5 9h16.5m-13.5-9v3m4.5-3v2.25m4.5-2.25v3m-9 6v-3m4.5 3v-2.25m4.5 2.25v-3" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z" />
                   </svg>
                   Tính scale
                 </button>
@@ -377,13 +301,13 @@
                 </button>
                 <a class="btn btn-secondary" id="exportCsv" href="/api/results/export-csv">
                   <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4.5 19.5h15" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                   </svg>
                   CSV
                 </a>
                 <button class="btn btn-secondary" id="refreshResults" type="button">
                   <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.02 9.35H21V4.37M20.17 9A8.25 8.25 0 1 0 21 12" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
                   </svg>
                   Tải lại
                 </button>
@@ -415,12 +339,12 @@
             <div class="pager-actions">
               <button class="icon-button pager-btn" id="resultPrevPage" type="button" aria-label="Trang kết quả trước">
                 <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                 </svg>
               </button>
               <button class="icon-button pager-btn" id="resultNextPage" type="button" aria-label="Trang kết quả sau">
                 <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
                 </svg>
               </button>
             </div>
@@ -436,7 +360,7 @@
               <div class="flex gap-2">
                 <button class="btn btn-console" id="expandLog" type="button">
                   <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75h6m-6 0v6m0-6 6.75 6.75m9.75-6.75h-6m6 0v6m0-6-6.75 6.75M3.75 20.25h6m-6 0v-6m0 6 6.75-6.75m9.75 6.75h-6m6 0v-6m0 6-6.75-6.75" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
                   </svg>
                   Mở rộng
                 </button>
@@ -480,39 +404,6 @@
       </div>
     </div>
 
-    <div class="modal" id="folderModal" role="dialog" aria-modal="true" aria-labelledby="folderModalTitle" hidden>
-      <div class="modal-panel max-w-3xl">
-        <header class="modal-header">
-          <div class="min-w-0">
-            <h3 class="modal-title" id="folderModalTitle">Chọn thư mục</h3>
-            <div class="text-break small-mono" id="folderCurrent">.</div>
-          </div>
-          <button type="button" class="icon-button" data-modal-close="folderModal" aria-label="Đóng">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </header>
-        <div class="modal-body">
-          <div class="mb-3 flex flex-wrap gap-2">
-            <button class="btn btn-secondary" id="folderUpBtn" type="button">
-              <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 19.5V4.5m0 0-6 6m6-6 6 6" />
-              </svg>
-              Lên thư mục cha
-            </button>
-            <button class="btn btn-primary" id="folderUseCurrentBtn" type="button">
-              <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-              </svg>
-              Chọn thư mục hiện tại
-            </button>
-          </div>
-          <div class="folder-list" id="folderList"></div>
-        </div>
-      </div>
-    </div>
-
     <div class="modal" id="imageModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
       <div class="modal-panel image-modal-panel">
         <header class="modal-header">
@@ -520,13 +411,13 @@
           <div class="modal-actions">
             <button type="button" class="icon-button" id="imageZoomOut" aria-label="Thu nhỏ ảnh">
               <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
               </svg>
             </button>
             <button type="button" class="icon-button" id="imageZoomReset" aria-label="Đưa ảnh về kích thước vừa màn hình">1x</button>
             <button type="button" class="icon-button" id="imageZoomIn" aria-label="Phóng to ảnh">
               <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
               </svg>
             </button>
             <button type="button" class="icon-button" data-modal-close="imageModal" aria-label="Đóng">
@@ -540,14 +431,14 @@
           <div class="image-view">
             <button type="button" class="image-nav image-nav-prev" id="imagePrev" aria-label="Ảnh trước">
               <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
               </svg>
             </button>
             <img id="modalImage" alt="Ảnh debug pipeline">
             <div class="image-caption" id="imageCaption" hidden></div>
             <button type="button" class="image-nav image-nav-next" id="imageNext" aria-label="Ảnh tiếp theo">
               <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
               </svg>
             </button>
             <p id="imageEmpty" class="font-display text-lg font-bold uppercase text-dim">Không có ảnh debug cho mục này.</p>
@@ -557,6 +448,6 @@
       </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260520-save-confirm"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260522-file-solid"></script>
   </body>
 </html>

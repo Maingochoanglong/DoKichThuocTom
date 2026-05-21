@@ -8,5 +8,6 @@ openvino_cache/
 benchmark/
 test/
 test1/
+scale/
 compare_outputs.py
 extract_largest_shrimp.py

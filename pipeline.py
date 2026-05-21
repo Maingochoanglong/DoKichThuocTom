@@ -132,7 +132,7 @@ def flow2_detect_track(model_det, q_f1_f2, q_f2_f3, flow_times: dict) -> None:
 
         results = model_det.predict(
             source=item["frame"],
-            verbose=False, conf=CONF_DET, device="intel:gpu", iou=0.3,
+            verbose=False, conf=CONF_DET, device="intel:gpu",
         )[0]
         detections = sv.Detections.from_ultralytics(results)
 
@@ -339,8 +339,14 @@ def flow4_segment(model_seg, q_f3_f4, q_f4_f5, flow_times: dict) -> None:
         if len(detections) == 0 or detections.mask is None:
             log.warning(f"[F4] {item['source_stem']} ID {item['track_id']}: không tìm thấy mask")
             continue
-
-        best_det  = detections[[detections.area.argmax()]]
+        
+        xyxy = detections.xyxy
+        box_areas = (
+            (xyxy[:, 2] - xyxy[:, 0]) *
+            (xyxy[:, 3] - xyxy[:, 1])
+        )
+        best_idx = int(box_areas.argmax())
+        best_det = detections[[best_idx]]
         seg_xyxy  = best_det.xyxy[0]
         mask_full = best_det.mask[0].astype(np.uint8)
 
