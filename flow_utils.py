@@ -31,13 +31,8 @@ def box_touches_line(center: float, line_coord: int, threshold: int) -> bool:
     # Kiểm tra tâm bounding box (cx hoặc cy) có nằm trong ngưỡng chạm vạch không.
     return abs(center - line_coord) <= threshold
 
-
-def get_masked_image(
-    frame: np.ndarray,
-    box_xyxy: np.ndarray | list,
-    pad: int = BBOX_PAD,
-) -> np.ndarray | None:
-    # Tạo ảnh nền đen cùng kích thước frame, chỉ giữ lại vùng bounding box (+ padding).
+def get_masked_image(frame: np.ndarray, box_xyxy: np.ndarray | list, pad: int = BBOX_PAD) -> np.ndarray | None:
+    # Tạo ảnh nền TRẮNG cùng kích thước frame, chỉ giữ lại vùng bounding box (+ padding).
     # Trả về None nếu vùng crop rỗng sau khi clamp về biên ảnh.
     h, w = frame.shape[:2]
     x1, y1, x2, y2 = map(int, box_xyxy)
@@ -45,6 +40,6 @@ def get_masked_image(
     x2 = min(w, x2 + pad);  y2 = min(h, y2 + pad)
     if x2 <= x1 or y2 <= y1:
         return None
-    out = np.zeros_like(frame)
+    out = np.full_like(frame, 255)
     out[y1:y2, x1:x2] = frame[y1:y2, x1:x2]
     return out

@@ -232,6 +232,29 @@ body.modal-open {
   color: #fff;
 }
 
+.input-picker-btn:disabled {
+  cursor: wait;
+  opacity: .58;
+}
+
+.config-picker-btn {
+  min-width: 72px;
+  min-height: 34px;
+  border-color: #fcd34d;
+  background: #fef3c7;
+  padding: 0 .65rem;
+  color: #92400e;
+  font-size: .9rem;
+  line-height: 1;
+}
+
+.config-picker-btn:hover,
+.config-picker-btn:focus-visible {
+  border-color: #d97706;
+  background: #d97706;
+  color: #fff;
+}
+
 .drop-zone small {
   color: var(--text);
   font-family: var(--mono);
@@ -266,21 +289,8 @@ body.modal-open {
   display: flex;
   align-items: center;
   gap: .35rem;
-  overflow: hidden;
+  overflow: visible;
   white-space: nowrap;
-}
-
-.file-icon {
-  width: 1rem;
-  height: 1rem;
-  flex: 0 0 auto;
-  color: var(--text);
-}
-
-.file-icon .icon-sm {
-  width: 100%;
-  height: 100%;
-  display: block;
 }
 
 .pager-bar {
@@ -376,7 +386,8 @@ body.modal-open {
   color: var(--text);
   font-size: .96rem;
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.35;
+  padding-bottom: .08rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -387,7 +398,7 @@ body.modal-open {
   color: var(--text);
   font-family: var(--mono);
   font-size: .82rem;
-  line-height: 1;
+  line-height: 1.35;
   white-space: nowrap;
 }
 
@@ -765,11 +776,14 @@ body.modal-open {
 }
 
 .source-block {
-  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  margin-bottom: .5rem;
 }
 
 .source-block:last-child {
-  border-bottom: 0;
+  margin-bottom: 0;
 }
 
 .source-block summary {
@@ -779,8 +793,10 @@ body.modal-open {
   align-items: center;
   justify-content: space-between;
   gap: .75rem;
+  border-left: 4px solid var(--amber);
+  background: var(--amber-soft);
   cursor: pointer;
-  padding: .7rem 2.35rem .7rem .85rem;
+  padding: .82rem 2.45rem .82rem .95rem;
   color: var(--text);
   font-family: var(--display);
   font-size: 1rem;
@@ -796,7 +812,12 @@ body.modal-open {
 }
 
 .source-block summary:hover {
-  background: var(--bg-row-hover);
+  background: #fde68a;
+}
+
+.source-block summary:focus-visible {
+  outline: 3px solid rgba(217, 119, 6, .22);
+  outline-offset: -3px;
 }
 
 .source-block summary::after {
@@ -806,8 +827,8 @@ body.modal-open {
   right: .9rem;
   width: .8rem;
   height: .8rem;
-  border-right: 2px solid var(--dim);
-  border-bottom: 2px solid var(--dim);
+  border-right: 2px solid #92400e;
+  border-bottom: 2px solid #92400e;
   background-position: center;
   background-repeat: no-repeat;
   transform: translateY(-65%) rotate(45deg);
@@ -819,7 +840,7 @@ body.modal-open {
 }
 
 .source-block summary:hover::after {
-  border-color: #92400e;
+  border-color: #78350f;
 }
 
 .source-title {
@@ -1223,8 +1244,8 @@ body.modal-open {
 
 #imageModal {
   padding: 0;
-  background: rgba(255, 255, 255, .76);
-  backdrop-filter: blur(10px);
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .image-modal-panel {
@@ -1316,7 +1337,7 @@ body.modal-open {
   max-width: min(100%, calc(100vw - 152px));
   max-height: calc(100vh - 188px);
   object-fit: contain;
-  background: rgba(255, 255, 255, .64);
+  background: transparent;
   box-shadow: 0 18px 54px rgba(26, 26, 26, .18);
   transform-origin: center center;
   user-select: none;

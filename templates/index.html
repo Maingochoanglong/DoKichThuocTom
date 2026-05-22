@@ -32,7 +32,7 @@
         --color-console-text: #a3e635;
       }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260522-file-solid">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260522-picker-shared">
   </head>
   <body class="min-h-screen overflow-x-hidden bg-shop-floor text-ink antialiased">
     <div class="grid min-h-screen min-w-0 grid-rows-[56px_minmax(0,1fr)]">
@@ -102,74 +102,73 @@
                 </span>
               </summary>
               <form id="configForm" class="grid gap-3 p-3" novalidate>
-                <div>
-                  <label class="form-label" for="cfg_SCALE">SCALE</label>
-                  <input class="form-control" id="cfg_SCALE" type="number" step="any" min="0" inputmode="decimal">
-                  <div class="form-help">Hệ số quy đổi pixel sang milimet. Ví dụ 0.35 nghĩa là 1 pixel = 0.35 mm; có thể cập nhật bằng chức năng Tính scale.</div>
-                </div>
-
-                <div>
-                  <div class="flex justify-between gap-2">
-                    <label class="form-label" for="cfg_CONF_DET">CONF_DET</label>
-                    <span class="config-value" id="confDetValue">--%</span>
+                <div class="grid gap-3">
+                  <div class="min-w-0">
+                    <label class="form-label" for="cfg_SCALE">SCALE</label>
+                    <input class="form-control" id="cfg_SCALE" type="number" step="any" min="0" inputmode="decimal">
+                    <div class="form-help">Hệ số quy đổi pixel sang milimet. Ví dụ 0.35 nghĩa là 1 pixel = 0.35 mm; chức năng Tính scale dùng bình phương tối thiểu theo y = m x + b.</div>
                   </div>
-                  <input class="form-range" id="cfg_CONF_DET" type="range" min="0" max="100" step="1">
-                  <div class="form-help">Ngưỡng tin cậy cho bước phát hiện tôm. Tăng để lọc chặt hơn, giảm để bắt nhiều đối tượng hơn.</div>
-                </div>
 
-                <div>
-                  <div class="flex justify-between gap-2">
-                    <label class="form-label" for="cfg_CONF_SEG">CONF_SEG</label>
-                    <span class="config-value" id="confSegValue">--%</span>
+                  <div class="min-w-0">
+                    <div class="flex min-w-0 items-center justify-between gap-1.5">
+                      <label class="form-label" for="cfg_CONF_DET">CONF_DET</label>
+                      <span class="config-value" id="confDetValue">--%</span>
+                    </div>
+                    <input class="form-range" id="cfg_CONF_DET" type="range" min="0" max="100" step="1">
+                    <div class="form-help">Ngưỡng tin cậy cho bước phát hiện tôm. Tăng để lọc chặt hơn, giảm để bắt nhiều đối tượng hơn.</div>
                   </div>
-                  <input class="form-range" id="cfg_CONF_SEG" type="range" min="0" max="100" step="1">
-                  <div class="form-help">Ngưỡng tin cậy cho bước phân đoạn mask thân tôm. Tăng để mask chắc hơn, giảm để mask nhạy hơn.</div>
-                </div>
 
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
+                  <div class="min-w-0">
+                    <div class="flex min-w-0 items-center justify-between gap-1.5">
+                      <label class="form-label" for="cfg_CONF_SEG">CONF_SEG</label>
+                      <span class="config-value" id="confSegValue">--%</span>
+                    </div>
+                    <input class="form-range" id="cfg_CONF_SEG" type="range" min="0" max="100" step="1">
+                    <div class="form-help">Ngưỡng tin cậy cho bước phân đoạn mask thân tôm. Tăng để mask chắc hơn, giảm để mask nhạy hơn.</div>
+                  </div>
+
+                  <div class="min-w-0">
                     <label class="form-label" for="cfg_BBOX_PAD">BBOX_PAD</label>
                     <input class="form-control" id="cfg_BBOX_PAD" type="number" step="1" min="0">
                     <div class="form-help">Số pixel nới rộng quanh bounding box trước khi cắt vùng tôm. Lớn hơn giúp tránh cắt cụt đầu/đuôi.</div>
                   </div>
-                  <div>
+
+                  <div class="min-w-0">
                     <label class="form-label" for="cfg_TOUCH_THRESHOLD">TOUCH_THRESHOLD</label>
                     <input class="form-control" id="cfg_TOUCH_THRESHOLD" type="number" step="any" min="0" inputmode="decimal">
                     <div class="form-help">Sai số pixel khi kiểm tra tôm chạm vạch tham chiếu. Tăng nếu vạch/chuyển động bị lệch nhẹ.</div>
                   </div>
+
+                  <div class="min-w-0">
+                    <label class="form-label" for="cfg_TARGET_FPS">TARGET_FPS</label>
+                    <input class="form-control" id="cfg_TARGET_FPS" type="number" step="any" min="0" inputmode="decimal">
+                    <div class="form-help">FPS mục tiêu khi lấy mẫu video. 0 nghĩa là xử lý toàn bộ frame; giá trị lớn hơn 0 giúp giảm tải xử lý.</div>
+                  </div>
                 </div>
 
-                <div>
-                  <label class="form-label" for="cfg_TARGET_FPS">TARGET_FPS</label>
-                  <input class="form-control" id="cfg_TARGET_FPS" type="number" step="any" min="0" inputmode="decimal">
-                  <div class="form-help">FPS mục tiêu khi lấy mẫu video. 0 nghĩa là xử lý toàn bộ frame; giá trị lớn hơn 0 giúp giảm tải xử lý.</div>
+                <div class="grid gap-2.5">
+                  <div class="min-w-0">
+                    <label class="form-label" for="cfg_INPUT_DIR">INPUT_DIR</label>
+                    <div class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-stretch gap-1.5">
+                      <input class="form-control" id="cfg_INPUT_DIR" type="text">
+                      <button class="input-picker-btn config-picker-btn" type="button" data-pick-path data-config-key="INPUT_DIR" data-pick-mode="file">File</button>
+                      <button class="input-picker-btn config-picker-btn" type="button" data-pick-path data-config-key="INPUT_DIR" data-pick-mode="folder">Folder</button>
+                    </div>
+                    <div class="form-help">Thư mục chứa ảnh/video đầu vào. File upload trên giao diện sẽ được lưu vào thư mục này.</div>
+                  </div>
+
+                  <div class="min-w-0">
+                    <label class="form-label" for="cfg_OUTPUT_DIR">OUTPUT_DIR</label>
+                    <div class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-stretch gap-1.5">
+                      <input class="form-control" id="cfg_OUTPUT_DIR" type="text">
+                      <button class="input-picker-btn config-picker-btn" type="button" data-pick-path data-config-key="OUTPUT_DIR" data-pick-mode="file">File</button>
+                      <button class="input-picker-btn config-picker-btn" type="button" data-pick-path data-config-key="OUTPUT_DIR" data-pick-mode="folder">Folder</button>
+                    </div>
+                    <div class="form-help">Thư mục chứa pipeline.log, JSON kết quả, ảnh debug và các thư mục run sau khi xử lý.</div>
+                  </div>
                 </div>
 
-                <div>
-                  <label class="form-label" for="cfg_MODEL_DET">MODEL_DET</label>
-                  <input class="form-control" id="cfg_MODEL_DET" type="text">
-                  <div class="form-help">Đường dẫn model phát hiện tôm. Có thể là thư mục OpenVINO model hoặc file model tương thích.</div>
-                </div>
-
-                <div>
-                  <label class="form-label" for="cfg_MODEL_SEG">MODEL_SEG</label>
-                  <input class="form-control" id="cfg_MODEL_SEG" type="text">
-                  <div class="form-help">Đường dẫn model phân đoạn tôm để tạo mask thân tôm trước khi đo chiều dài.</div>
-                </div>
-
-                <div>
-                  <label class="form-label" for="cfg_INPUT_DIR">INPUT_DIR</label>
-                  <input class="form-control" id="cfg_INPUT_DIR" type="text">
-                  <div class="form-help">Thư mục chứa ảnh/video đầu vào. File upload trên giao diện sẽ được lưu vào thư mục này.</div>
-                </div>
-
-                <div>
-                  <label class="form-label" for="cfg_OUTPUT_DIR">OUTPUT_DIR</label>
-                  <input class="form-control" id="cfg_OUTPUT_DIR" type="text">
-                  <div class="form-help">Thư mục chứa pipeline.log, JSON kết quả, ảnh debug và các thư mục run sau khi xử lý.</div>
-                </div>
-
-                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div class="grid gap-2">
                   <label class="toggle-line">
                     <input id="cfg_SAVE" type="checkbox">
                     <span class="toggle-copy">
@@ -198,7 +197,7 @@
                       <small>Coi nhiều video input là các đoạn liên tiếp của cùng một băng chuyền.</small>
                     </span>
                   </label>
-                  <label class="toggle-line sm:col-span-2">
+                  <label class="toggle-line">
                     <input id="cfg_CONVEYOR_VERTICAL" type="checkbox">
                     <span class="toggle-copy">
                       <span>CONVEYOR_VERTICAL</span>
@@ -282,9 +281,6 @@
                   <option value="">Tất cả size</option>
                 </select>
                 <button class="btn btn-warning" id="scaleModeBtn" type="button">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z" />
-                  </svg>
                   Tính scale
                 </button>
                 <button class="btn btn-primary hidden" id="applyScaleBtn" type="button">
@@ -300,15 +296,9 @@
                   Hủy
                 </button>
                 <a class="btn btn-secondary" id="exportCsv" href="/api/results/export-csv">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                  </svg>
                   CSV
                 </a>
                 <button class="btn btn-secondary" id="refreshResults" type="button">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                  </svg>
                   Tải lại
                 </button>
               </div>
@@ -448,6 +438,6 @@
       </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260522-file-solid"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260523-linear-scale"></script>
   </body>
 </html>

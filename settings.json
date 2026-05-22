@@ -1,0 +1,36 @@
+{
+  "config": {
+    "INPUT_DIR": "scale",
+    "OUTPUT_DIR": "output",
+    "CLEAR_OUTPUT": false,
+    "CLEAR_INPUT": false,
+    "CHUNK_MODE": false,
+    "SCALE": 1.0,
+    "CONF_DET": 0.5,
+    "CONF_SEG": 0.5,
+    "BBOX_PAD": 5,
+    "TOUCH_THRESHOLD": 10.0,
+    "TARGET_FPS": 0.0,
+    "CONVEYOR_VERTICAL": false,
+    "SAVE": true
+  },
+  "size": {
+    "SIZE_RANGES": {
+      "S": [
+        100.0,
+        125.0
+      ],
+      "M": [
+        125.0,
+        160.0
+      ],
+      "L": [
+        160.0,
+        200.0
+      ]
+    },
+    "UNDERSIZE_LABEL": "Ngoại cỡ nhỏ",
+    "OVERSIZE_LABEL": "Ngoại cỡ lớn",
+    "FALLBACK_LABEL": "Ngoại cỡ"
+  }
+}

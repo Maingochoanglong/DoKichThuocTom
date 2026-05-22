@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import csv
 import importlib.util
 import io
@@ -7,6 +5,7 @@ import json
 import logging
 import mimetypes
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -15,7 +14,8 @@ from pathlib import Path
 from typing import Any
 
 from flask import Flask, Response, jsonify, render_template, request, send_from_directory
-from werkzeug.utils import secure_filename
+
+from settings_loader import get_settings_errors, save_settings_section
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -105,7 +105,7 @@ def _ensure_runtime_dirs() -> None:
     _output_dir()
 
 
-def _jsonable_config() -> dict[str, Any]:
+def _config_values(include_internal: bool = False) -> dict[str, Any]:
     cfg = _load_config()
     keys = [
         "INPUT_DIR",
@@ -113,8 +113,6 @@ def _jsonable_config() -> dict[str, Any]:
         "CLEAR_OUTPUT",
         "CLEAR_INPUT",
         "CHUNK_MODE",
-        "MODEL_DET",
-        "MODEL_SEG",
         "SCALE",
         "CONF_DET",
         "CONF_SEG",
@@ -124,7 +122,20 @@ def _jsonable_config() -> dict[str, Any]:
         "CONVEYOR_VERTICAL",
         "SAVE",
     ]
+    if include_internal:
+        keys[5:5] = ["MODEL_DET", "MODEL_SEG"]
     return {key: getattr(cfg, key) for key in keys}
+
+
+def _jsonable_config() -> dict[str, Any]:
+    return _config_values(include_internal=False)
+
+
+def _with_settings_errors(section: str, payload: dict[str, Any]) -> dict[str, Any]:
+    errors = get_settings_errors(section)
+    if errors:
+        payload["_settings_errors"] = errors
+    return payload
 
 
 def _allowed_suffixes() -> set[str]:
@@ -162,120 +173,31 @@ def _coerce_int(data: dict[str, Any], key: str, min_value: int | None = None) ->
     return value
 
 
-def _format_str_set(values: set[str]) -> str:
-    return "{" + ", ".join(repr(v) for v in sorted(values)) + "}"
-
-
-def _format_color_list(values: list[tuple[int, int, int]]) -> str:
-    color_notes = [
-        "Xanh dương",
-        "Xanh lá",
-        "Đỏ",
-        "Cyan",
-        "Tím hồng",
-        "Vàng",
-        "Cam",
-        "Tím",
-        "Xanh da trời",
-        "Xanh lá sáng",
-        "Hồng đậm",
-        "Xanh ngọc",
-    ]
-    lines = ["["]
-    for index, color in enumerate(values):
-        note = color_notes[index] if index < len(color_notes) else f"Màu phụ {index + 1}"
-        lines.append(f"    {tuple(color)!r},  # {note}")
-    lines.append("]")
-    return "\n".join(lines)
-
-
 def _write_config(data: dict[str, Any]) -> None:
-    current = _load_config()
-    text = f'''# config.py
-# Toàn bộ tham số cấu hình hệ thống đo tôm trên băng chuyền.
-# Có thể chỉnh trực tiếp hoặc lưu từ giao diện Flask.
-# Quy ước:
-# - Các đường dẫn tương đối được tính từ thư mục gốc dự án.
-# - Các ngưỡng CONF nằm trong khoảng 0.0 đến 1.0.
-# - Các khoảng cách/chiều dài ghi bằng pixel hoặc mm sẽ được chú thích riêng.
-
-
-# Bảng màu BGR dùng trực tiếp với OpenCV để vẽ track, mask, skeleton và ảnh debug.
-# OpenCV dùng thứ tự BGR, không phải RGB.
-COLOR = {_format_color_list(list(getattr(current, "COLOR")))}
-
-
-# Thư mục chứa ảnh/video đầu vào. Upload từ giao diện web sẽ lưu vào đây.
-INPUT_DIR  = {data["INPUT_DIR"]!r}
-
-# Thư mục chứa kết quả chạy pipeline: pipeline.log, JSON kết quả, ảnh debug và thư mục run.
-OUTPUT_DIR = {data["OUTPUT_DIR"]!r}
-
-# True: xóa toàn bộ dữ liệu cũ trong OUTPUT_DIR trước mỗi lần chạy pipeline.
-# False: giữ lại các run cũ để xem lại, so sánh hoặc xuất CSV.
-CLEAR_OUTPUT = {data["CLEAR_OUTPUT"]!r}
-
-# True: xóa file trong INPUT_DIR sau khi pipeline ghi JSON thành công.
-# False: giữ file input để kiểm tra lại hoặc chạy lại pipeline.
-CLEAR_INPUT  = {data["CLEAR_INPUT"]!r}
-
-# True: coi các file video trong INPUT_DIR là các chunk liên tiếp của cùng một băng chuyền.
-# False: xử lý mỗi ảnh/video như một nguồn độc lập.
-CHUNK_MODE = {data["CHUNK_MODE"]!r}
-
-# Đường dẫn model phát hiện tôm. Có thể là file .pt hoặc thư mục OpenVINO model.
-MODEL_DET = {data["MODEL_DET"]!r}
-
-# Đường dẫn model phân đoạn tôm để tạo mask thân tôm. Có thể là file .pt hoặc thư mục OpenVINO model.
-MODEL_SEG = {data["MODEL_SEG"]!r}
-
-# Hệ số quy đổi pixel -> mm.
-# Ví dụ SCALE = 0.35 nghĩa là 1 pixel tương ứng 0.35 mm.
-# Có thể cập nhật từ chức năng "Tính scale" trên giao diện.
-SCALE = {data["SCALE"]!r}
-
-# Các định dạng ảnh được phép nạp vào INPUT_DIR hoặc upload qua giao diện.
-IMG_EXTS = {_format_str_set(set(getattr(current, "IMG_EXTS")))}
-
-# Các định dạng video được phép nạp vào INPUT_DIR hoặc upload qua giao diện.
-VID_EXTS = {_format_str_set(set(getattr(current, "VID_EXTS")))}
-
-# Ngưỡng tin cậy cho bước phát hiện tôm.
-# Tăng giá trị để lọc chặt hơn, giảm giá trị để bắt nhiều đối tượng hơn.
-CONF_DET = {data["CONF_DET"]!r}
-
-# Ngưỡng tin cậy cho bước phân đoạn mask thân tôm.
-# Tăng giá trị để mask chắc hơn, giảm giá trị để mask rộng/nhạy hơn.
-CONF_SEG = {data["CONF_SEG"]!r}
-
-# Số pixel nới rộng quanh bounding box trước khi cắt vùng tôm để xử lý tiếp.
-# Giá trị lớn giúp tránh cắt cụt đầu/đuôi, nhưng quá lớn có thể kéo thêm nhiễu nền.
-BBOX_PAD = {data["BBOX_PAD"]!r}
-
-# Số lần chạm vạch tham chiếu tối thiểu trước khi một track được xem là đủ điều kiện đo.
-REQUIRED_TOUCHES = {getattr(current, "REQUIRED_TOUCHES", 3)!r}
-
-# Sai số pixel khi kiểm tra tôm có chạm vạch tham chiếu hay không.
-TOUCH_THRESHOLD  = {data["TOUCH_THRESHOLD"]!r}
-
-# FPS mục tiêu khi lấy mẫu video.
-# 0 nghĩa là xử lý toàn bộ frame; giá trị > 0 sẽ lấy mẫu theo FPS này để giảm tải.
-TARGET_FPS = {data["TARGET_FPS"]!r}
-
-# True: băng chuyền chạy theo chiều dọc khung hình.
-# False: băng chuyền chạy theo chiều ngang khung hình.
-CONVEYOR_VERTICAL = {data["CONVEYOR_VERTICAL"]!r}
-
-# True: lưu ảnh debug F3-F6 và ghi đường dẫn ảnh vào JSON output.
-# False: chỉ xuất JSON kết quả số, tiết kiệm dung lượng và thời gian ghi file.
-SAVE = {data["SAVE"]!r}
-'''
-    CONFIG_PATH.write_text(text, encoding="utf-8")
+    save_settings_section(
+        "config",
+        {
+            "INPUT_DIR": data["INPUT_DIR"],
+            "OUTPUT_DIR": data["OUTPUT_DIR"],
+            "CLEAR_OUTPUT": data["CLEAR_OUTPUT"],
+            "CLEAR_INPUT": data["CLEAR_INPUT"],
+            "CHUNK_MODE": data["CHUNK_MODE"],
+            "SCALE": data["SCALE"],
+            "CONF_DET": data["CONF_DET"],
+            "CONF_SEG": data["CONF_SEG"],
+            "BBOX_PAD": data["BBOX_PAD"],
+            "TOUCH_THRESHOLD": data["TOUCH_THRESHOLD"],
+            "TARGET_FPS": data["TARGET_FPS"],
+            "CONVEYOR_VERTICAL": data["CONVEYOR_VERTICAL"],
+            "SAVE": data["SAVE"],
+        },
+    )
 
 
 def _validate_config_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    current = _jsonable_config()
-    data = {**current, **payload}
+    current = _config_values(include_internal=True)
+    public_payload = {key: value for key, value in payload.items() if key not in {"MODEL_DET", "MODEL_SEG"}}
+    data = {**current, **public_payload}
 
     for key in ["INPUT_DIR", "OUTPUT_DIR", "MODEL_DET", "MODEL_SEG"]:
         value = str(data.get(key, "")).strip()
@@ -351,45 +273,15 @@ def _validate_sizes_payload(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _write_sizes(data: dict[str, Any]) -> None:
-    range_lines = []
-    for label, (lo, hi) in data["ranges"].items():
-        range_lines.append(f"    {label!r}: ({lo!r}, {hi!r}),")
-    ranges_text = "\n".join(range_lines)
-    text = f'''"""
-size.py
-Định nghĩa các hằng số và hàm phân loại kích cỡ tôm theo chiều dài thực (mm).
-"""
-
-# Bảng phân loại kích cỡ (từ mm đến mm)
-SIZE_RANGES: dict[str, tuple[float, float]] = {{
-{ranges_text}
-}}
-
-# Các nhãn ngoại cỡ để người dùng có thể tùy chỉnh.
-UNDERSIZE_LABEL = {data["undersize_label"]!r}
-OVERSIZE_LABEL  = {data["oversize_label"]!r}
-FALLBACK_LABEL  = {data["fallback_label"]!r}
-
-def classify_size(real_length: float) -> str:
-    """
-    Phân loại tôm theo chiều dài thực (mm).
-    """
-    for size_label, (lo, hi) in SIZE_RANGES.items():
-        if lo <= real_length < hi:
-            return size_label
-
-    if SIZE_RANGES:
-        min_length = min(lo for lo, hi in SIZE_RANGES.values())
-        max_length = max(hi for lo, hi in SIZE_RANGES.values())
-
-        if real_length < min_length:
-            return UNDERSIZE_LABEL
-        if real_length >= max_length:
-            return OVERSIZE_LABEL
-
-    return FALLBACK_LABEL
-'''
-    SIZE_PATH.write_text(text, encoding="utf-8")
+    save_settings_section(
+        "size",
+        {
+            "SIZE_RANGES": data["ranges"],
+            "UNDERSIZE_LABEL": data["undersize_label"],
+            "OVERSIZE_LABEL": data["oversize_label"],
+            "FALLBACK_LABEL": data["fallback_label"],
+        },
+    )
 
 
 def _pipeline_running() -> bool:
@@ -424,7 +316,10 @@ def _pipeline_status() -> dict[str, Any]:
 
 
 def _safe_input_name(filename: str) -> str:
-    secured = secure_filename(filename)
+    raw_name = Path(str(filename).replace("\\", "/")).name.strip()
+    secured = re.sub(r"[^A-Za-z0-9._-]+", "_", raw_name).strip(" .")
+    while secured.startswith("."):
+        secured = secured[1:]
     if not secured:
         secured = f"upload_{time.time_ns()}"
     return secured
@@ -465,8 +360,8 @@ def _pick_local_path(mode: str, initial: str = "") -> Path | None:
     try:
         import tkinter as tk
         from tkinter import filedialog
-    except Exception as exc:  # pragma: no cover - depends on local desktop runtime
-        raise RuntimeError("Khong mo duoc hop thoai chon duong dan tren may nay") from exc
+    except Exception as exc:  
+        raise RuntimeError("Không mở được hộp thoại chọn đường dẫn trên máy này") from exc
 
     initial_path = Path(initial) if initial else BASE_DIR
     if not initial_path.is_absolute():
@@ -483,9 +378,9 @@ def _pick_local_path(mode: str, initial: str = "") -> Path | None:
     root.attributes("-topmost", True)
     try:
         if mode == "folder":
-            selected = filedialog.askdirectory(initialdir=str(initial_dir), title="Chon folder")
+            selected = filedialog.askdirectory(initialdir=str(initial_dir), title="Chọn folder")
         else:
-            selected = filedialog.askopenfilename(initialdir=str(initial_dir), title="Chon file")
+            selected = filedialog.askopenfilename(initialdir=str(initial_dir), title="Chọn file")
     finally:
         root.destroy()
 
@@ -601,6 +496,36 @@ def _calibration_index(run_dir: Path) -> dict[tuple[str, str], dict[str, Any]]:
                 "pixel_length": shrimp.get("pixel_length"),
             }
     return index
+
+
+def _least_squares_mm_per_px(samples: list[dict[str, Any]]) -> tuple[float, float, float, list[dict[str, Any]]]:
+    if len(samples) < 2:
+        raise ValueError("Cần ít nhất 2 mẫu hợp lệ để tính scale theo y = m x + b")
+
+    n = len(samples)
+    sum_x = sum(sample["pixel_length"] for sample in samples)
+    sum_y = sum(sample["real_length_mm"] for sample in samples)
+    sum_xx = sum(sample["pixel_length"] ** 2 for sample in samples)
+    sum_xy = sum(sample["pixel_length"] * sample["real_length_mm"] for sample in samples)
+    denominator = n * sum_xx - sum_x ** 2
+    if denominator == 0:
+        raise ValueError("Cần ít nhất 2 mẫu có pixel_length khác nhau để tính scale theo y = m x + b")
+
+    scale = (n * sum_xy - sum_x * sum_y) / denominator
+    intercept_mm = (sum_y - scale * sum_x) / n
+    enriched_samples = []
+    squared_errors = []
+    for sample in samples:
+        fitted_mm = sample["pixel_length"] * scale + intercept_mm
+        residual_mm = sample["real_length_mm"] - fitted_mm
+        squared_errors.append(residual_mm ** 2)
+        enriched_sample = dict(sample)
+        enriched_sample["fitted_mm"] = round(fitted_mm, 6)
+        enriched_sample["residual_mm"] = round(residual_mm, 6)
+        enriched_samples.append(enriched_sample)
+
+    rmse_mm = (sum(squared_errors) / len(squared_errors)) ** 0.5
+    return scale, intercept_mm, rmse_mm, enriched_samples
 
 
 @app.get("/")
@@ -769,7 +694,7 @@ def pipeline_log():
 
 @app.get("/api/config")
 def get_config():
-    return jsonify(_jsonable_config())
+    return jsonify(_with_settings_errors("config", _jsonable_config()))
 
 
 @app.put("/api/config")
@@ -779,7 +704,7 @@ def put_config():
         _write_config(data)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
-    return jsonify(_jsonable_config())
+    return jsonify(_with_settings_errors("config", _jsonable_config()))
 
 
 @app.post("/api/config/pick-path")
@@ -787,10 +712,10 @@ def pick_config_path():
     payload = request.get_json(force=True, silent=True) or {}
     key = str(payload.get("key") or "").strip()
     mode = str(payload.get("mode") or "file").strip()
-    if key not in {"MODEL_DET", "MODEL_SEG", "INPUT_DIR", "OUTPUT_DIR"}:
-        return jsonify({"error": "Hang so config khong hop le"}), 400
+    if key not in {"INPUT_DIR", "OUTPUT_DIR"}:
+        return jsonify({"error": "Hằng số config không hợp lệ"}), 400
     if mode not in {"file", "folder"}:
-        return jsonify({"error": "Kieu chon duong dan khong hop le"}), 400
+        return jsonify({"error": "Kiểu chọn đường dẫn không hợp lệ"}), 400
 
     current = str(_jsonable_config().get(key, ""))
     try:
@@ -813,7 +738,7 @@ def patch_scale():
         _write_config(data)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
-    return jsonify(_jsonable_config())
+    return jsonify(_with_settings_errors("config", _jsonable_config()))
 
 
 @app.post("/api/calibrate")
@@ -878,23 +803,31 @@ def calibrate_scale():
             message += ": " + "; ".join(errors[:3])
         return jsonify({"error": message, "errors": errors}), 400
 
-    new_scale = sum(sample["scale"] for sample in samples) / len(samples)
+    try:
+        new_scale, intercept_mm, rmse_mm, samples = _least_squares_mm_per_px(samples)
+    except ValueError as exc:
+        return jsonify({"error": str(exc), "errors": errors}), 400
+
     config_data = _validate_config_payload({"SCALE": round(new_scale, 6)})
     _write_config(config_data)
     return jsonify(
         {
             "scale": config_data["SCALE"],
+            "intercept_mm": round(intercept_mm, 6),
+            "method": "least_squares_linear",
+            "formula": "real_length_mm = scale * pixel_length + intercept_mm",
+            "rmse_mm": round(rmse_mm, 6),
             "count": len(samples),
             "samples": samples,
             "errors": errors,
-            "config": _jsonable_config(),
+            "config": _with_settings_errors("config", _jsonable_config()),
         }
     )
 
 
 @app.get("/api/config/sizes")
 def get_sizes():
-    return jsonify(_jsonable_sizes())
+    return jsonify(_with_settings_errors("size", _jsonable_sizes()))
 
 
 @app.put("/api/config/sizes")
@@ -904,7 +837,7 @@ def put_sizes():
         _write_sizes(data)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
-    return jsonify(_jsonable_sizes())
+    return jsonify(_with_settings_errors("size", _jsonable_sizes()))
 
 
 @app.get("/api/results/runs")

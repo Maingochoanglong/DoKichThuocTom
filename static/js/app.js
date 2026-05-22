@@ -358,8 +358,20 @@ async function pollLog() {
   appendLog(payload.content);
 }
 
+function showSettingsErrors(payload) {
+  const errors = Array.isArray(payload?._settings_errors) ? payload._settings_errors : [];
+  if (!errors.length) return;
+  toast(errors.join(" | "), "warning", {
+    title: "Lỗi đọc settings.json",
+    duration: 7000,
+  });
+}
+
 async function loadConfig() {
-  state.config = await requestJson("/api/config");
+  const payload = await requestJson("/api/config");
+  showSettingsErrors(payload);
+  const {_settings_errors, ...config} = payload;
+  state.config = config;
   Object.entries(state.config).forEach(([key, value]) => {
     const input = $(`cfg_${key}`);
     if (!input) return;
@@ -379,8 +391,6 @@ function collectConfig() {
   const keys = [
     "INPUT_DIR",
     "OUTPUT_DIR",
-    "MODEL_DET",
-    "MODEL_SEG",
     "SCALE",
     "CONF_DET",
     "CONF_SEG",
@@ -419,15 +429,59 @@ async function saveConfig(event) {
       body: JSON.stringify(collectConfig()),
     });
     await loadConfig();
+    await loadInputFiles();
     flashSaved(submitter, "Đã lưu config");
-    toast("Config mới đã được ghi vào config.py", "success", {title: "Đã lưu cấu hình"});
+    toast("Cấu hình đã được lưu chính thức vào settings.json", "success", {title: "Đã lưu cấu hình"});
   } catch (error) {
     toast(error.message, "error");
   }
 }
 
+async function pickConfigPath(button) {
+  const key = button.dataset.configKey;
+  const mode = button.dataset.pickMode;
+  if (!key || !mode || state.running) return;
+
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  try {
+    const result = await requestJson("/api/config/pick-path", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({key, mode}),
+    });
+    if (result.cancelled || !result.path) return;
+
+    const input = $(`cfg_${key}`);
+    if (input) {
+      input.value = result.path;
+      input.focus();
+    }
+    if (key === "INPUT_DIR") {
+      state.config = await requestJson("/api/config", {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(collectConfig()),
+      });
+      await loadConfig();
+      await loadInputFiles();
+      toast("Đã chọn INPUT_DIR và cập nhật danh sách file input", "success");
+      return;
+    }
+    toast(`Đã chọn ${key}`, "success");
+  } catch (error) {
+    toast(error.message, "error");
+  } finally {
+    button.removeAttribute("aria-busy");
+    button.disabled = state.running;
+  }
+}
+
 async function loadSizes() {
-  state.sizes = await requestJson("/api/config/sizes");
+  const payload = await requestJson("/api/config/sizes");
+  showSettingsErrors(payload);
+  const {_settings_errors, ...sizes} = payload;
+  state.sizes = sizes;
   $("size_undersize").value = state.sizes.undersize_label;
   $("size_oversize").value = state.sizes.oversize_label;
   $("size_fallback").value = state.sizes.fallback_label;
@@ -516,7 +570,7 @@ async function saveSizes(event) {
     });
     await loadSizes();
     flashSaved(submitter, "Đã lưu phân loại");
-    toast("Bảng phân loại kích cỡ đã được ghi vào size.py", "success", {title: "Đã lưu phân loại"});
+    toast("Bảng phân loại kích cỡ đã được lưu chính thức vào settings.json", "success", {title: "Đã lưu phân loại"});
   } catch (error) {
     toast(error.message, "error");
   }
@@ -568,7 +622,6 @@ function renderInputFiles() {
     row.className = "file-row";
     row.innerHTML = `
       <div class="file-main" title="${escapeHtml(file.name)} ${escapeHtml(file.suffix || "file")} · ${formatBytes(file.size)}">
-        <span class="file-icon">${icons.fileSolid}</span>
         <span class="file-name">${escapeHtml(file.name)}</span>
         <span class="file-meta">${escapeHtml(file.suffix || "file")} · ${formatBytes(file.size)}</span>
       </div>
@@ -584,18 +637,9 @@ function renderInputFiles() {
 }
 
 async function deleteInputFile(name) {
-  const confirmed = await requestConfirm({
-    title: "Xác nhận xóa file input",
-    message: `File "${name}" sẽ bị xóa khỏi thư mục input.`,
-    details: ["Thao tác này không thể hoàn tác từ giao diện."],
-    confirmLabel: "Xóa file",
-  });
-  if (!confirmed) return;
-
   try {
     await requestJson(`/api/files/input/${encodeURIComponent(name)}`, {method: "DELETE"});
     await loadInputFiles();
-    toast(`Đã xóa "${name}"`, "warning", {title: "Đã xóa dữ liệu"});
   } catch (error) {
     toast(error.message, "error");
   }
@@ -618,7 +662,7 @@ async function confirmPipelineDataDeletion() {
     && (Boolean(formConfig.CLEAR_OUTPUT) !== Boolean(state.config.CLEAR_OUTPUT)
       || Boolean(formConfig.CLEAR_INPUT) !== Boolean(state.config.CLEAR_INPUT))
   ) {
-    details.push("Pipeline dùng cấu hình đã lưu trong config.py. Nếu vừa đổi CLEAR_INPUT/CLEAR_OUTPUT trên form, hãy lưu config trước khi chạy.");
+    details.push("Pipeline dùng cấu hình đã lưu chính thức trong settings.json. Nếu vừa đổi CLEAR_INPUT/CLEAR_OUTPUT trên form, hãy lưu config trước khi chạy.");
   }
   if (!details.length) return true;
 
@@ -997,7 +1041,7 @@ async function applyScale() {
       renderResults(state.currentResults);
     }
     flashSaved($("applyScaleBtn"), "Đã lưu scale");
-    toast(`SCALE = ${Number(result.scale).toFixed(6)} từ ${result.count} mẫu`, "success", {title: "Đã lưu scale"});
+    toast(`SCALE = ${Number(result.scale).toFixed(6)}, b = ${Number(result.intercept_mm).toFixed(6)} mm theo y = m x + b từ ${result.count} mẫu`, "success", {title: "Đã lưu scale"});
   } catch (error) {
     toast(error.message, "error");
   }
@@ -1168,6 +1212,10 @@ function bindEvents() {
     });
   }
   $("configForm").addEventListener("submit", saveConfig);
+  $("configForm").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-pick-path]");
+    if (button) pickConfigPath(button);
+  });
   $("sizeForm").addEventListener("submit", saveSizes);
   $("addSizeRow").addEventListener("click", addSizeRow);
   $("sizeRows").addEventListener("click", (event) => {
