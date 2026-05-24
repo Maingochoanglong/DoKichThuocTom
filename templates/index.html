@@ -4,20 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Shrimp Measure</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style type="text/tailwindcss">
       @theme {
-        --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
-        --font-mono: "Share Tech Mono", "Cascadia Mono", Consolas, monospace;
         --color-shop-floor: #f0f0ee;
         --color-panel: #ffffff;
         --color-inset: #f5f5f3;
         --color-ink: #1a1a1a;
         --color-muted: #525252;
-        --color-dim: #737373;
+        --color-dim: #525252;
         --color-line: #e4e4e1;
         --color-line-strong: #c8c8c4;
         --color-line-heavy: #9a9a96;
@@ -32,14 +27,15 @@
         --color-console-text: #a3e635;
       }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260522-picker-shared">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260524-cleanup">
   </head>
   <body class="min-h-screen overflow-x-hidden bg-shop-floor text-ink antialiased">
+    <a class="skip-link" href="#dataTab">Bỏ qua đầu trang</a>
     <div class="grid min-h-screen min-w-0 grid-rows-[56px_minmax(0,1fr)]">
       <header class="flex min-w-0 items-center justify-between gap-3 border-b border-line-strong bg-panel px-4 py-2">
         <div class="min-w-0">
-          <div class="font-display text-[11px] font-bold uppercase text-dim">Bảng điều khiển đo tôm</div>
-          <h1 class="truncate font-display text-2xl font-extrabold uppercase text-ink">Shrimp Measure</h1>
+          <div class="text-[11px] font-bold uppercase text-dim">Bảng điều khiển đo tôm</div>
+          <h1 class="truncate text-2xl font-extrabold uppercase text-ink">Shrimp Measure</h1>
         </div>
         <div class="flex min-w-0 flex-wrap items-center justify-end gap-2">
           <span class="status-chip" id="pipelineStatus">Sẵn sàng</span>
@@ -47,318 +43,385 @@
         </div>
       </header>
 
-      <main class="grid min-h-0 min-w-0 grid-cols-1 overflow-hidden lg:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
-        <aside class="min-h-0 min-w-0 overflow-y-auto overflow-x-hidden border-b border-line bg-panel p-3 lg:border-b-0 lg:border-r">
-          <section class="industrial-section">
-            <div class="mb-2 flex min-w-0 items-center justify-between gap-2">
-              <h2 class="section-title">Nạp dữ liệu</h2>
+      <main class="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden p-3">
+        <nav class="browser-tabs" aria-label="Điều hướng dashboard">
+          <button class="browser-tab active" id="tabData" type="button" data-tab-target="dataTab" aria-controls="dataTab" aria-selected="true">DỮ LIỆU</button>
+          <button class="browser-tab" id="tabResults" type="button" data-tab-target="resultsTab" aria-controls="resultsTab" aria-selected="false">KẾT QUẢ</button>
+          <button class="browser-tab" id="tabConfig" type="button" data-tab-target="configTab" aria-controls="configTab" aria-selected="false">CẤU HÌNH</button>
+          <button class="browser-tab" id="tabSizes" type="button" data-tab-target="sizesTab" aria-controls="sizesTab" aria-selected="false">KÍCH CỠ</button>
+          <button class="browser-tab" id="tabLog" type="button" data-tab-target="logTab" aria-controls="logTab" aria-selected="false">LOG</button>
+        </nav>
+
+        <div class="tab-pages">
+          <section class="tab-page active" id="dataTab" data-tab-page role="tabpanel" aria-labelledby="tabData">
+            <div class="tab-scroll">
+              <section class="industrial-section">
+                <div class="section-heading-row mb-2 flex min-w-0 items-center justify-between gap-2">
+                  <h2 class="section-title">Nạp dữ liệu</h2>
+                </div>
+                <div class="drop-zone" id="dropZone" aria-label="Kéo file hoặc folder vào đây">
+                  <input id="fileInput" name="files" type="file" multiple hidden>
+                  <input id="folderInput" name="folder" type="file" webkitdirectory directory multiple hidden>
+                  <svg class="h-10 w-10 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                  </svg>
+                  <span class="text-lg font-bold uppercase">Kéo file hoặc folder vào đây</span>
+                  <div class="input-picker-actions">
+                    <button class="input-picker-btn" id="chooseFileBtn" type="button">File</button>
+                    <button class="input-picker-btn" id="chooseFolderBtn" type="button">Folder</button>
+                  </div>
+                  <small>Hỗ trợ JPG, PNG, MP4, AVI, MOV. Có thể kéo thả hoặc chọn File/Folder.</small>
+                </div>
+                <div class="upload-progress" id="uploadProgress" role="status" aria-live="polite" hidden>
+                  <div class="upload-progress-copy">
+                    <strong id="uploadProgressTitle">Đang nạp file</strong>
+                    <span id="uploadProgressText">0%</span>
+                  </div>
+                  <div class="upload-progress-track" aria-hidden="true">
+                    <span id="uploadProgressBar"></span>
+                  </div>
+                </div>
+                <div class="pager-top" id="inputPagerTop">
+                  <span class="pager-info" id="inputPageInfo">0 file</span>
+                  <label class="pager-size" for="inputPageSize">
+                    <span>Dòng/trang</span>
+                    <select class="form-select pager-select" id="inputPageSize">
+                      <option value="5" selected>5</option>
+                      <option value="10">10</option>
+                      <option value="25">25</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="file-list" id="fileList"></div>
+                <div class="pager-pages" id="inputPager" hidden>
+                  <label class="pager-size pager-count" for="inputPageButtonCount">
+                    <span>Nút trang</span>
+                    <select class="form-select pager-select" id="inputPageButtonCount" data-page-button-count>
+                      <option value="3" selected>3</option>
+                      <option value="5">5</option>
+                      <option value="7">7</option>
+                      <option value="9">9</option>
+                    </select>
+                  </label>
+                  <button class="icon-button pager-btn" id="inputPrevPage" type="button" aria-label="Trang file trước"></button>
+                  <div class="pager-numbers" id="inputPageButtons" aria-label="Trang file input"></div>
+                  <button class="icon-button pager-btn" id="inputNextPage" type="button" aria-label="Trang file sau"></button>
+                </div>
+              </section>
+
+              <section class="industrial-section border-t-2 border-line-heavy">
+                <button class="btn btn-run btn-primary w-full" id="runBtn" type="button">
+                  Bắt đầu đo
+                </button>
+                <p class="form-help mt-2">Bắt đầu đo sẽ dùng cấu hình đã lưu. Nếu vừa đổi thông số, hãy lưu config trước khi chạy.</p>
+              </section>
             </div>
-            <div class="drop-zone" id="dropZone" aria-label="Kéo file hoặc folder vào đây">
-              <input id="fileInput" name="files" type="file" multiple hidden>
-              <input id="folderInput" name="folder" type="file" webkitdirectory directory multiple hidden>
-              <svg class="h-10 w-10 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-              </svg>
-              <span class="font-display text-lg font-bold uppercase">Kéo file hoặc folder vào đây</span>
-              <div class="input-picker-actions">
-                <button class="input-picker-btn" id="chooseFileBtn" type="button">File</button>
-                <button class="input-picker-btn" id="chooseFolderBtn" type="button">Folder</button>
-              </div>
-              <small>JPG, PNG, MP4, AVI, MOV</small>
-            </div>
-            <div class="pager-bar compact" id="inputPager">
-              <span class="pager-info" id="inputPageInfo">0 file</span>
-              <label class="pager-size" for="inputPageSize">
-                <span>Hiển thị</span>
-                <select class="form-select pager-select" id="inputPageSize">
-                  <option value="5" selected>5</option>
-                  <option value="10">10</option>
-                  <option value="25">25</option>
-                </select>
-              </label>
-            </div>
-            <div class="file-list" id="fileList"></div>
           </section>
 
-          <section class="industrial-section border-t-2 border-line-heavy">
-            <button class="btn btn-run btn-primary w-full" id="runBtn" type="button">
-              <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-              </svg>
-              Chạy pipeline
-            </button>
-            <p class="form-help mt-2" id="runHint">Log sẽ đọc từ output/pipeline.log khi chạy.</p>
+          <section class="tab-page" id="resultsTab" data-tab-page role="tabpanel" aria-labelledby="tabResults" hidden>
+            <section class="result-panel grid h-full min-h-0 min-w-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-2 overflow-hidden">
+              <div class="industrial-section mb-0">
+                <div class="section-heading-row mb-2 flex min-w-0 items-center justify-between gap-2">
+                  <h2 class="section-title">Danh sách đo</h2>
+                </div>
+                <div class="toolbar-controls mt-2" style="justify-content: flex-start;">
+                  <select class="form-select" id="runSelect" aria-label="Chọn lần chạy"></select>
+                  <select class="form-select" id="sizeFilter" aria-label="Lọc theo kích cỡ">
+                    <option value="">Tất cả size</option>
+                  </select>
+                  <button class="btn btn-warning" id="scaleModeBtn" type="button">
+                    Tính scale
+                  </button>
+                  <button class="btn btn-primary" id="applyScaleBtn" type="button" hidden>
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                    Lưu scale
+                  </button>
+                  <button class="btn btn-secondary" id="cancelScaleBtn" type="button" hidden>
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                    Hủy
+                  </button>
+                  <button class="btn btn-secondary" id="scaleImportBtn" type="button" hidden>
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                    </svg>
+                    Nạp CSV/Excel
+                  </button>
+                  <input id="scaleImportInput" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+                  <a class="btn btn-secondary" id="exportCsv" href="/api/results/export-csv">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5A3.375 3.375 0 0 0 10.125 2.25H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                    </svg>
+                    CSV
+                  </a>
+                  <a class="btn btn-secondary" id="exportExcel" href="/api/results/export-excel">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125V5.625c0-.621.504-1.125 1.125-1.125h17.25c.621 0 1.125.504 1.125 1.125v12.75c0 .621-.504 1.125-1.125 1.125m-17.25 0h17.25M8.25 8.25h7.5m-7.5 3.75h7.5m-7.5 3.75h4.5" />
+                    </svg>
+                    Excel
+                  </a>
+                  <button class="btn btn-secondary" id="refreshResults" type="button">
+                    Tải lại
+                  </button>
+                </div>
+                <div class="pager-top result-toolbar-pager" id="resultPagerTop" hidden>
+                  <span class="pager-info" id="resultPageInfo">0-0 / 0</span>
+                  <label class="pager-size" for="resultPageSize">
+                    <span>Dòng/trang</span>
+                    <select class="form-select pager-select" id="resultPageSize">
+                      <option value="10">10</option>
+                      <option value="25" selected>25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+
+              <div class="scale-help" id="scaleHelp" role="status" hidden>
+                Để hiệu chuẩn, nhập chiều dài thật của mẫu vào cột <strong>mm thực tế</strong>. Bạn cũng có thể nạp file CSV/Excel chỉ chứa duy nhất 1 cột giá trị theo đúng thứ tự hiển thị để tự động điền nhanh, sau đó bấm <strong>Lưu scale</strong>.
+              </div>
+
+              <div class="result-summary" id="resultSummary">
+                <span>0 nguồn</span>
+                <span>0 tôm</span>
+                <span>Chưa có kết quả</span>
+              </div>
+
+              <div class="results-area" id="resultsArea">
+                <div class="empty-state">Chưa có kết quả. Hãy chạy đo hoặc kiểm tra thư mục OUTPUT_DIR.</div>
+              </div>
+              <div class="pager-pages" id="resultPager" hidden>
+                <label class="pager-size pager-count" for="resultPageButtonCount">
+                  <span>Nút trang</span>
+                  <select class="form-select pager-select" id="resultPageButtonCount" data-page-button-count>
+                    <option value="3" selected>3</option>
+                    <option value="5">5</option>
+                    <option value="7">7</option>
+                    <option value="9">9</option>
+                  </select>
+                </label>
+                <button class="icon-button pager-btn" id="resultPrevPage" type="button" aria-label="Trang kết quả trước"></button>
+                <div class="pager-numbers" id="resultPageButtons" aria-label="Trang kết quả"></div>
+                <button class="icon-button pager-btn" id="resultNextPage" type="button" aria-label="Trang kết quả sau"></button>
+              </div>
+            </section>
           </section>
 
-          <div class="settings-stack">
-            <details class="industrial-details" open>
-              <summary class="industrial-summary">
-                <span class="inline-flex min-w-0 items-center gap-2">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                  </svg>
-                  <span class="truncate">Cấu hình xử lý</span>
-                </span>
-              </summary>
-              <form id="configForm" class="grid gap-3 p-3" novalidate>
-                <div class="grid gap-3">
-                  <div class="min-w-0">
-                    <label class="form-label" for="cfg_SCALE">SCALE</label>
-                    <input class="form-control" id="cfg_SCALE" type="number" step="any" min="0" inputmode="decimal">
-                    <div class="form-help">Hệ số quy đổi pixel sang milimet. Ví dụ 0.35 nghĩa là 1 pixel = 0.35 mm; chức năng Tính scale dùng bình phương tối thiểu theo y = m x + b.</div>
-                  </div>
-
-                  <div class="min-w-0">
-                    <div class="flex min-w-0 items-center justify-between gap-1.5">
-                      <label class="form-label" for="cfg_CONF_DET">CONF_DET</label>
-                      <span class="config-value" id="confDetValue">--%</span>
+          <section class="tab-page" id="configTab" data-tab-page role="tabpanel" aria-labelledby="tabConfig" hidden>
+            <div class="tab-scroll">
+              <section class="industrial-section">
+                <div class="section-heading-row mb-2 flex min-w-0 items-center justify-between gap-2">
+                  <h2 class="section-title">Cấu hình xử lý</h2>
+                </div>
+                <form id="configForm" class="config-form grid gap-3 p-3" novalidate>
+                  <section class="config-block">
+                    <div class="config-block-head">
+                      <h3>Quy đổi</h3>
+                      <p>SCALE quyết định một pixel tương ứng bao nhiêu milimet.</p>
                     </div>
-                    <input class="form-range" id="cfg_CONF_DET" type="range" min="0" max="100" step="1">
-                    <div class="form-help">Ngưỡng tin cậy cho bước phát hiện tôm. Tăng để lọc chặt hơn, giảm để bắt nhiều đối tượng hơn.</div>
-                  </div>
-
-                  <div class="min-w-0">
-                    <div class="flex min-w-0 items-center justify-between gap-1.5">
-                      <label class="form-label" for="cfg_CONF_SEG">CONF_SEG</label>
-                      <span class="config-value" id="confSegValue">--%</span>
+                    <div class="config-grid">
+                      <div class="min-w-0">
+                        <label class="form-label" for="cfg_SCALE">SCALE</label>
+                        <input class="form-control" id="cfg_SCALE" type="number" step="any" min="0" inputmode="decimal">
+                        <div class="form-help">Giá trị mm/pixel. SCALE càng lớn thì chiều dài tính ra theo mm càng lớn.</div>
+                      </div>
                     </div>
-                    <input class="form-range" id="cfg_CONF_SEG" type="range" min="0" max="100" step="1">
-                    <div class="form-help">Ngưỡng tin cậy cho bước phân đoạn mask thân tôm. Tăng để mask chắc hơn, giảm để mask nhạy hơn.</div>
-                  </div>
+                  </section>
 
-                  <div class="min-w-0">
-                    <label class="form-label" for="cfg_BBOX_PAD">BBOX_PAD</label>
-                    <input class="form-control" id="cfg_BBOX_PAD" type="number" step="1" min="0">
-                    <div class="form-help">Số pixel nới rộng quanh bounding box trước khi cắt vùng tôm. Lớn hơn giúp tránh cắt cụt đầu/đuôi.</div>
-                  </div>
-
-                  <div class="min-w-0">
-                    <label class="form-label" for="cfg_TOUCH_THRESHOLD">TOUCH_THRESHOLD</label>
-                    <input class="form-control" id="cfg_TOUCH_THRESHOLD" type="number" step="any" min="0" inputmode="decimal">
-                    <div class="form-help">Sai số pixel khi kiểm tra tôm chạm vạch tham chiếu. Tăng nếu vạch/chuyển động bị lệch nhẹ.</div>
-                  </div>
-
-                  <div class="min-w-0">
-                    <label class="form-label" for="cfg_TARGET_FPS">TARGET_FPS</label>
-                    <input class="form-control" id="cfg_TARGET_FPS" type="number" step="any" min="0" inputmode="decimal">
-                    <div class="form-help">FPS mục tiêu khi lấy mẫu video. 0 nghĩa là xử lý toàn bộ frame; giá trị lớn hơn 0 giúp giảm tải xử lý.</div>
-                  </div>
-                </div>
-
-                <div class="grid gap-2.5">
-                  <div class="min-w-0">
-                    <label class="form-label" for="cfg_INPUT_DIR">INPUT_DIR</label>
-                    <div class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-stretch gap-1.5">
-                      <input class="form-control" id="cfg_INPUT_DIR" type="text">
-                      <button class="input-picker-btn config-picker-btn" type="button" data-pick-path data-config-key="INPUT_DIR" data-pick-mode="file">File</button>
-                      <button class="input-picker-btn config-picker-btn" type="button" data-pick-path data-config-key="INPUT_DIR" data-pick-mode="folder">Folder</button>
+                  <section class="config-block">
+                    <div class="config-block-head">
+                      <h3>Nhận diện</h3>
+                      <p>Các ngưỡng này ảnh hưởng trực tiếp đến việc tìm tôm, tách thân và cắt vùng đo.</p>
                     </div>
-                    <div class="form-help">Thư mục chứa ảnh/video đầu vào. File upload trên giao diện sẽ được lưu vào thư mục này.</div>
-                  </div>
+                    <div class="config-grid config-detect-grid">
+                      <div class="min-w-0 config-range-field">
+                        <div class="flex min-w-0 items-center justify-between gap-1.5">
+                          <label class="form-label" for="cfg_CONF_DET">CONF_DET</label>
+                          <span class="config-value" id="confDetValue">--%</span>
+                        </div>
+                        <input class="form-range" id="cfg_CONF_DET" type="range" min="0" max="100" step="1">
+                        <div class="form-help">Độ chắc chắn tối thiểu để nhận một vật là tôm. Tăng để bớt nhận nhầm, giảm để ít bỏ sót.</div>
+                      </div>
 
-                  <div class="min-w-0">
-                    <label class="form-label" for="cfg_OUTPUT_DIR">OUTPUT_DIR</label>
-                    <div class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-stretch gap-1.5">
-                      <input class="form-control" id="cfg_OUTPUT_DIR" type="text">
-                      <button class="input-picker-btn config-picker-btn" type="button" data-pick-path data-config-key="OUTPUT_DIR" data-pick-mode="file">File</button>
-                      <button class="input-picker-btn config-picker-btn" type="button" data-pick-path data-config-key="OUTPUT_DIR" data-pick-mode="folder">Folder</button>
+                      <div class="min-w-0 config-range-field">
+                        <div class="flex min-w-0 items-center justify-between gap-1.5">
+                          <label class="form-label" for="cfg_CONF_SEG">CONF_SEG</label>
+                          <span class="config-value" id="confSegValue">--%</span>
+                        </div>
+                        <input class="form-range" id="cfg_CONF_SEG" type="range" min="0" max="100" step="1">
+                        <div class="form-help">Độ chắc chắn khi tách thân tôm khỏi nền. Tăng để mask chặt hơn, giảm để lấy đủ thân hơn.</div>
+                      </div>
+
+                      <div class="min-w-0 config-number-field">
+                        <label class="form-label" for="cfg_BBOX_PAD">BBOX_PAD</label>
+                        <input class="form-control" id="cfg_BBOX_PAD" type="number" step="1" min="0">
+                        <div class="form-help">Số pixel nới thêm quanh khung tôm trước khi đo. Dùng khi ảnh bị cắt quá sát thân tôm.</div>
+                      </div>
+
+                      <div class="min-w-0 config-number-field">
+                        <label class="form-label" for="cfg_TOUCH_THRESHOLD">TOUCH_THRESHOLD</label>
+                        <input class="form-control" id="cfg_TOUCH_THRESHOLD" type="number" step="any" min="0" inputmode="decimal">
+                        <div class="form-help">Khoảng dung sai khi xét tôm chạm vạch biên. Giá trị lớn hơn sẽ dễ tính là chạm vạch hơn.</div>
+                      </div>
                     </div>
-                    <div class="form-help">Thư mục chứa pipeline.log, JSON kết quả, ảnh debug và các thư mục run sau khi xử lý.</div>
-                  </div>
-                </div>
+                  </section>
 
-                <div class="grid gap-2">
-                  <label class="toggle-line">
-                    <input id="cfg_SAVE" type="checkbox">
-                    <span class="toggle-copy">
-                      <span>SAVE</span>
-                      <small>Lưu ảnh debug F3-F6 và ghi đường dẫn ảnh vào JSON output.</small>
-                    </span>
-                  </label>
-                  <label class="toggle-line">
-                    <input id="cfg_CLEAR_INPUT" type="checkbox">
-                    <span class="toggle-copy">
-                      <span>CLEAR_INPUT</span>
-                      <small>Xóa file đầu vào sau khi pipeline ghi JSON thành công.</small>
-                    </span>
-                  </label>
-                  <label class="toggle-line">
-                    <input id="cfg_CLEAR_OUTPUT" type="checkbox">
-                    <span class="toggle-copy">
-                      <span>CLEAR_OUTPUT</span>
-                      <small>Xóa kết quả cũ trong OUTPUT_DIR trước mỗi lần chạy mới.</small>
-                    </span>
-                  </label>
-                  <label class="toggle-line">
-                    <input id="cfg_CHUNK_MODE" type="checkbox">
-                    <span class="toggle-copy">
-                      <span>CHUNK_MODE</span>
-                      <small>Coi nhiều video input là các đoạn liên tiếp của cùng một băng chuyền.</small>
-                    </span>
-                  </label>
-                  <label class="toggle-line">
-                    <input id="cfg_CONVEYOR_VERTICAL" type="checkbox">
-                    <span class="toggle-copy">
-                      <span>CONVEYOR_VERTICAL</span>
-                      <small>Bật khi băng chuyền chạy theo chiều dọc khung hình; tắt khi chạy ngang.</small>
-                    </span>
-                  </label>
-                </div>
+                  <section class="config-block">
+                    <div class="config-block-head">
+                      <h3>Video</h3>
+                      <p>Chọn cách đọc video và hướng di chuyển của tôm trong khung hình.</p>
+                    </div>
+                    <div class="config-grid config-video-grid">
+                      <div class="min-w-0 config-video-main">
+                        <label class="form-label" for="cfg_TARGET_FPS">TARGET_FPS</label>
+                        <input class="form-control" id="cfg_TARGET_FPS" type="number" step="any" min="0" inputmode="decimal">
+                        <div class="form-help">Số frame lấy mỗi giây từ video. Nhập 0 để xử lý toàn bộ frame.</div>
+                      </div>
 
-                <button class="btn btn-primary w-full" type="submit">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                  </svg>
-                  Lưu config
-                </button>
-              </form>
-            </details>
+                      <label class="toggle-line config-video-toggle">
+                        <input id="cfg_CHUNK_MODE" type="checkbox">
+                        <span class="toggle-copy">
+                          <span>CHUNK_MODE</span>
+                          <small>Bật khi nhiều video là các đoạn nối tiếp của cùng một lần đo.</small>
+                        </span>
+                      </label>
 
-            <details class="industrial-details" open>
-              <summary class="industrial-summary">
-                <span class="inline-flex min-w-0 items-center gap-2">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5v15M15.75 4.5v15" />
-                  </svg>
-                  <span class="truncate">Phân loại kích cỡ</span>
-                </span>
-              </summary>
-              <form id="sizeForm" class="size-form grid gap-3 p-3" novalidate>
-                <div class="table-scroll">
-                  <table class="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>Tên cỡ</th>
-                        <th>Từ mm</th>
-                        <th>Đến mm</th>
-                        <th>Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody id="sizeRows"></tbody>
-                  </table>
-                </div>
-                <button class="btn btn-secondary w-full" id="addSizeRow" type="button">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                  Thêm cỡ
-                </button>
-                <div>
-                  <label class="form-label" for="size_undersize">Tên dưới cỡ nhỏ nhất</label>
-                  <input class="form-control" id="size_undersize" type="text">
-                </div>
-                <div>
-                  <label class="form-label" for="size_oversize">Tên trên cỡ lớn nhất</label>
-                  <input class="form-control" id="size_oversize" type="text">
-                </div>
-                <div>
-                  <label class="form-label" for="size_fallback">Tên ngoài khoảng phân loại</label>
-                  <input class="form-control" id="size_fallback" type="text">
-                </div>
-                <button class="btn btn-primary w-full" type="submit">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                  </svg>
-                  Lưu phân loại
-                </button>
-              </form>
-            </details>
-          </div>
-        </aside>
+                      <label class="toggle-line config-video-toggle">
+                        <input id="cfg_CONVEYOR_VERTICAL" type="checkbox">
+                        <span class="toggle-copy">
+                          <span>CONVEYOR_VERTICAL</span>
+                          <small>Bật nếu tôm di chuyển theo chiều dọc ảnh; tắt nếu tôm di chuyển ngang.</small>
+                        </span>
+                      </label>
+                    </div>
+                  </section>
 
-        <section class="result-panel grid min-h-0 min-w-0 grid-rows-[auto_auto_auto_minmax(0,1fr)_180px] gap-2 overflow-hidden p-3">
-          <div class="industrial-section mb-0">
-            <div class="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div class="min-w-0">
-                <div class="font-display text-[11px] font-bold uppercase text-dim">Kết quả</div>
-                <h2 class="truncate font-display text-2xl font-extrabold uppercase text-ink">Danh sách đo</h2>
-              </div>
-              <div class="toolbar-controls">
-                <select class="form-select" id="runSelect" aria-label="Chọn lần chạy"></select>
-                <select class="form-select" id="sizeFilter" aria-label="Lọc theo kích cỡ">
-                  <option value="">Tất cả size</option>
-                </select>
-                <button class="btn btn-warning" id="scaleModeBtn" type="button">
-                  Tính scale
-                </button>
-                <button class="btn btn-primary hidden" id="applyScaleBtn" type="button">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                  </svg>
-                  Lưu scale
-                </button>
-                <button class="btn btn-secondary hidden" id="cancelScaleBtn" type="button">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                  </svg>
-                  Hủy
-                </button>
-                <a class="btn btn-secondary" id="exportCsv" href="/api/results/export-csv">
-                  CSV
-                </a>
-                <button class="btn btn-secondary" id="refreshResults" type="button">
-                  Tải lại
-                </button>
-              </div>
+                  <section class="config-block">
+                    <div class="config-block-head">
+                      <h3>Thư mục & lưu/xóa</h3>
+                      <p>Chọn nơi lấy dữ liệu đầu vào, nơi ghi kết quả và các tùy chọn dọn file.</p>
+                    </div>
+                    <div class="config-grid config-storage-grid">
+                      <div class="min-w-0 config-path-field">
+                        <label class="form-label" for="cfg_INPUT_DIR">INPUT_DIR</label>
+                        <div class="grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-1.5">
+                          <input class="form-control" id="cfg_INPUT_DIR" type="text">
+                          <button class="input-picker-btn config-picker-btn" type="button" data-pick-path data-config-key="INPUT_DIR" data-pick-mode="folder">Folder</button>
+                        </div>
+                        <div class="form-help">Thư mục chứa ảnh/video sẽ được đưa vào pipeline đo.</div>
+                      </div>
+
+                      <div class="min-w-0 config-path-field">
+                        <label class="form-label" for="cfg_OUTPUT_DIR">OUTPUT_DIR</label>
+                        <div class="grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-1.5">
+                          <input class="form-control" id="cfg_OUTPUT_DIR" type="text">
+                          <button class="input-picker-btn config-picker-btn" type="button" data-pick-path data-config-key="OUTPUT_DIR" data-pick-mode="folder">Folder</button>
+                        </div>
+                        <div class="form-help">Thư mục ghi JSON kết quả, log chạy và ảnh debug sau khi đo.</div>
+                      </div>
+
+                      <label class="toggle-line config-toggle-field">
+                        <input id="cfg_SAVE" type="checkbox">
+                        <span class="toggle-copy">
+                          <span>SAVE</span>
+                          <small>Bật để lưu ảnh debug và ghi đường dẫn ảnh vào JSON.</small>
+                        </span>
+                      </label>
+
+                      <label class="toggle-line config-toggle-field">
+                        <input id="cfg_CLEAR_INPUT" type="checkbox">
+                        <span class="toggle-copy">
+                          <span>CLEAR_INPUT</span>
+                          <small>Bật để xóa ảnh/video đầu vào sau khi đo xong. Cân nhắc nếu cần giữ file gốc.</small>
+                        </span>
+                      </label>
+
+                      <label class="toggle-line config-toggle-field">
+                        <input id="cfg_CLEAR_OUTPUT" type="checkbox">
+                        <span class="toggle-copy">
+                          <span>CLEAR_OUTPUT</span>
+                          <small>Bật để xóa kết quả cũ trong OUTPUT_DIR trước khi bắt đầu lần đo mới.</small>
+                        </span>
+                      </label>
+                    </div>
+                  </section>
+
+                  <button class="btn btn-primary w-full" type="submit">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                    Lưu config
+                  </button>
+                </form>
+              </section>
             </div>
-          </div>
-
-          <div class="scale-help hidden" id="scaleHelp" role="status">
-            Nhập độ dài thực tế vào cột <strong>mm</strong> cho các mẫu dùng để hiệu chuẩn, rồi bấm <strong>Lưu scale</strong>.
-          </div>
-
-          <div class="result-summary" id="resultSummary">
-            <span>0 nguồn</span>
-            <span>0 tôm</span>
-            <span>Chưa có kết quả</span>
-          </div>
-
-          <div class="pager-bar" id="resultPager" hidden>
-            <span class="pager-info" id="resultPageInfo">0-0 / 0</span>
-            <label class="pager-size" for="resultPageSize">
-              <span>Dòng/trang</span>
-              <select class="form-select pager-select" id="resultPageSize">
-                <option value="10">10</option>
-                <option value="25" selected>25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
-            </label>
-            <div class="pager-actions">
-              <button class="icon-button pager-btn" id="resultPrevPage" type="button" aria-label="Trang kết quả trước">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                </svg>
-              </button>
-              <button class="icon-button pager-btn" id="resultNextPage" type="button" aria-label="Trang kết quả sau">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="results-area" id="resultsArea">
-            <div class="empty-state">Chưa có JSON kết quả trong output.</div>
-          </div>
-
-          <section class="log-console" aria-label="Log pipeline">
-            <div class="log-header">
-              <span>System log</span>
-              <div class="flex gap-2">
-                <button class="btn btn-console" id="expandLog" type="button">
-                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-                  </svg>
-                  Mở rộng
-                </button>
-              </div>
-            </div>
-            <div class="log-body" id="logBody" role="log" aria-live="polite"></div>
           </section>
-        </section>
+
+          <section class="tab-page" id="sizesTab" data-tab-page role="tabpanel" aria-labelledby="tabSizes" hidden>
+            <div class="tab-scroll">
+              <section class="industrial-section">
+                <div class="section-heading-row mb-2 flex min-w-0 items-center justify-between gap-2">
+                  <h2 class="section-title">Phân loại kích cỡ</h2>
+                </div>
+                <form id="sizeForm" class="size-form grid gap-3 p-3" novalidate>
+                  <div class="table-scroll">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Tên cỡ</th>
+                          <th>Từ mm</th>
+                          <th>Đến mm</th>
+                          <th>Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody id="sizeRows"></tbody>
+                    </table>
+                  </div>
+                  <button class="btn btn-secondary w-full" id="addSizeRow" type="button">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Thêm cỡ
+                  </button>
+                  <div>
+                    <label class="form-label" for="size_undersize">Tên dưới cỡ nhỏ nhất</label>
+                    <input class="form-control" id="size_undersize" type="text">
+                    <div class="form-help">Tên dùng cho tôm nhỏ hơn khoảng đầu tiên trong bảng.</div>
+                  </div>
+                  <div>
+                    <label class="form-label" for="size_oversize">Tên trên cỡ lớn nhất</label>
+                    <input class="form-control" id="size_oversize" type="text">
+                    <div class="form-help">Tên dùng cho tôm lớn hơn khoảng cuối cùng trong bảng.</div>
+                  </div>
+                  <div>
+                    <label class="form-label" for="size_fallback">Tên ngoài khoảng phân loại</label>
+                    <input class="form-control" id="size_fallback" type="text">
+                    <div class="form-help">Tên dự phòng khi kết quả không nằm trong khoảng nào đã khai báo.</div>
+                  </div>
+                  <button class="btn btn-primary w-full" type="submit">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                    Lưu phân loại
+                  </button>
+                </form>
+              </section>
+            </div>
+          </section>
+
+          <section class="tab-page" id="logTab" data-tab-page role="tabpanel" aria-labelledby="tabLog" hidden>
+            <section class="log-console log-page-console" aria-label="Log pipeline">
+              <div class="log-header">
+                <span>System log</span>
+              </div>
+              <div class="log-body" id="logBody" role="log" aria-live="polite"></div>
+            </section>
+          </section>
+        </div>
       </main>
     </div>
 
@@ -397,7 +460,7 @@
     <div class="modal" id="imageModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
       <div class="modal-panel image-modal-panel">
         <header class="modal-header">
-          <h3 class="modal-title truncate" id="modalTitle">Ảnh debug</h3>
+          <h3 class="modal-title min-w-0 truncate" id="modalTitle">Ảnh debug</h3>
           <div class="modal-actions">
             <button type="button" class="icon-button" id="imageZoomOut" aria-label="Thu nhỏ ảnh">
               <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -431,13 +494,13 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
               </svg>
             </button>
-            <p id="imageEmpty" class="font-display text-lg font-bold uppercase text-dim">Không có ảnh debug cho mục này.</p>
+            <p id="imageEmpty" class="text-lg font-bold uppercase text-dim">Không có ảnh debug cho mục này.</p>
           </div>
           <nav class="image-tabs" id="imageTabs" aria-label="Danh sách ảnh"></nav>
         </div>
       </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260523-linear-scale"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260524-cleanup"></script>
   </body>
 </html>

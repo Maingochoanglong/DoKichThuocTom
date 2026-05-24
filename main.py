@@ -25,7 +25,7 @@ ov.Core = CachedCore
 from ultralytics import YOLO
 
 from config import (
-    CLEAR_INPUT, CLEAR_OUTPUT,
+    CLEAR_INPUT, CLEAR_OUTPUT, QUEUE_SIZE,
     INPUT_DIR, MODEL_DET, MODEL_SEG, OUTPUT_DIR, SAVE,
 )
 from logger_setup import setup_logging, get_logger
@@ -111,11 +111,11 @@ def main() -> None:
     error_lock = threading.Lock()
 
     # Queues
-    q_f1_f2 = Queue()
-    q_f2_f3 = Queue()
-    q_f3_f4 = Queue()
-    q_f4_f5 = Queue()
-    q_f5_f6 = Queue()
+    q_f1_f2 = Queue(maxsize=QUEUE_SIZE)
+    q_f2_f3 = Queue(maxsize=QUEUE_SIZE)
+    q_f3_f4 = Queue(maxsize=QUEUE_SIZE)
+    q_f4_f5 = Queue(maxsize=QUEUE_SIZE)
+    q_f5_f6 = Queue(maxsize=QUEUE_SIZE)
     all_queues = [q_f1_f2, q_f2_f3, q_f3_f4, q_f4_f5, q_f5_f6]
 
     # Pipeline threads

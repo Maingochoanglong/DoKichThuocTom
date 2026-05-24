@@ -10,18 +10,39 @@ import subprocess
 import sys
 import threading
 import time
+import zipfile
 from pathlib import Path
 from typing import Any
+from xml.sax.saxutils import escape as xml_escape
 
 from flask import Flask, Response, jsonify, render_template, request, send_from_directory
 
-from settings_loader import get_settings_errors, save_settings_section
+from settings_loader import clear_settings_errors, get_settings_errors, save_settings
 
 
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = BASE_DIR / "config.py"
 SIZE_PATH = BASE_DIR / "size.py"
 MAIN_PATH = BASE_DIR / "main.py"
+
+CONFIG_KEYS = [
+    "INPUT_DIR",
+    "OUTPUT_DIR",
+    "CLEAR_OUTPUT",
+    "CLEAR_INPUT",
+    "CHUNK_MODE",
+    "SCALE",
+    "CONF_DET",
+    "CONF_SEG",
+    "BBOX_PAD",
+    "TOUCH_THRESHOLD",
+    "TARGET_FPS",
+    "CONVEYOR_VERTICAL",
+    "SAVE",
+]
+INTERNAL_CONFIG_KEYS = ["MODEL_DET", "MODEL_SEG"]
+BOOL_CONFIG_KEYS = ["CLEAR_OUTPUT", "CLEAR_INPUT", "CHUNK_MODE", "CONVEYOR_VERTICAL", "SAVE"]
+RESULT_EXPORT_HEADERS = ["run", "source_file", "track_id", "frame_idx", "pixel_length", "real_length_mm", "size"]
 
 
 mimetypes.add_type("text/css; charset=utf-8", ".css")
@@ -61,10 +82,12 @@ def _load_module(path: Path, name: str):
 
 
 def _load_config():
+    clear_settings_errors()
     return _load_module(CONFIG_PATH, "config")
 
 
 def _load_size():
+    clear_settings_errors()
     return _load_module(SIZE_PATH, "size")
 
 
@@ -107,23 +130,7 @@ def _ensure_runtime_dirs() -> None:
 
 def _config_values(include_internal: bool = False) -> dict[str, Any]:
     cfg = _load_config()
-    keys = [
-        "INPUT_DIR",
-        "OUTPUT_DIR",
-        "CLEAR_OUTPUT",
-        "CLEAR_INPUT",
-        "CHUNK_MODE",
-        "SCALE",
-        "CONF_DET",
-        "CONF_SEG",
-        "BBOX_PAD",
-        "TOUCH_THRESHOLD",
-        "TARGET_FPS",
-        "CONVEYOR_VERTICAL",
-        "SAVE",
-    ]
-    if include_internal:
-        keys[5:5] = ["MODEL_DET", "MODEL_SEG"]
+    keys = CONFIG_KEYS + (INTERNAL_CONFIG_KEYS if include_internal else [])
     return {key: getattr(cfg, key) for key in keys}
 
 
@@ -131,11 +138,19 @@ def _jsonable_config() -> dict[str, Any]:
     return _config_values(include_internal=False)
 
 
-def _with_settings_errors(section: str, payload: dict[str, Any]) -> dict[str, Any]:
-    errors = get_settings_errors(section)
+def _with_settings_errors(payload: dict[str, Any]) -> dict[str, Any]:
+    errors = get_settings_errors()
     if errors:
         payload["_settings_errors"] = errors
     return payload
+
+
+def _config_response():
+    return jsonify(_with_settings_errors(_jsonable_config()))
+
+
+def _sizes_response():
+    return jsonify(_with_settings_errors(_jsonable_sizes()))
 
 
 def _allowed_suffixes() -> set[str]:
@@ -174,32 +189,15 @@ def _coerce_int(data: dict[str, Any], key: str, min_value: int | None = None) ->
 
 
 def _write_config(data: dict[str, Any]) -> None:
-    save_settings_section(
-        "config",
-        {
-            "INPUT_DIR": data["INPUT_DIR"],
-            "OUTPUT_DIR": data["OUTPUT_DIR"],
-            "CLEAR_OUTPUT": data["CLEAR_OUTPUT"],
-            "CLEAR_INPUT": data["CLEAR_INPUT"],
-            "CHUNK_MODE": data["CHUNK_MODE"],
-            "SCALE": data["SCALE"],
-            "CONF_DET": data["CONF_DET"],
-            "CONF_SEG": data["CONF_SEG"],
-            "BBOX_PAD": data["BBOX_PAD"],
-            "TOUCH_THRESHOLD": data["TOUCH_THRESHOLD"],
-            "TARGET_FPS": data["TARGET_FPS"],
-            "CONVEYOR_VERTICAL": data["CONVEYOR_VERTICAL"],
-            "SAVE": data["SAVE"],
-        },
-    )
+    save_settings("config", {key: data[key] for key in CONFIG_KEYS})
 
 
 def _validate_config_payload(payload: dict[str, Any]) -> dict[str, Any]:
     current = _config_values(include_internal=True)
-    public_payload = {key: value for key, value in payload.items() if key not in {"MODEL_DET", "MODEL_SEG"}}
+    public_payload = {key: value for key, value in payload.items() if key in CONFIG_KEYS}
     data = {**current, **public_payload}
 
-    for key in ["INPUT_DIR", "OUTPUT_DIR", "MODEL_DET", "MODEL_SEG"]:
+    for key in ["INPUT_DIR", "OUTPUT_DIR", *INTERNAL_CONFIG_KEYS]:
         value = str(data.get(key, "")).strip()
         if not value:
             raise ValueError(f"{key} không được để trống")
@@ -208,7 +206,7 @@ def _validate_config_payload(payload: dict[str, Any]) -> dict[str, Any]:
     _workspace_path(data["INPUT_DIR"])
     _workspace_path(data["OUTPUT_DIR"])
 
-    for key in ["CLEAR_OUTPUT", "CLEAR_INPUT", "CHUNK_MODE", "CONVEYOR_VERTICAL", "SAVE"]:
+    for key in BOOL_CONFIG_KEYS:
         data[key] = _normalize_bool(data[key])
 
     data["SCALE"] = _coerce_float(data, "SCALE", min_value=0.000001)
@@ -273,7 +271,7 @@ def _validate_sizes_payload(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _write_sizes(data: dict[str, Any]) -> None:
-    save_settings_section(
+    save_settings(
         "size",
         {
             "SIZE_RANGES": data["ranges"],
@@ -356,7 +354,7 @@ def _relative_workspace_path(path: Path) -> str:
     return path.relative_to(BASE_DIR).as_posix()
 
 
-def _pick_local_path(mode: str, initial: str = "") -> Path | None:
+def _pick_local_folder(initial: str = "") -> Path | None:
     try:
         import tkinter as tk
         from tkinter import filedialog
@@ -377,10 +375,7 @@ def _pick_local_path(mode: str, initial: str = "") -> Path | None:
     root.withdraw()
     root.attributes("-topmost", True)
     try:
-        if mode == "folder":
-            selected = filedialog.askdirectory(initialdir=str(initial_dir), title="Chọn folder")
-        else:
-            selected = filedialog.askopenfilename(initialdir=str(initial_dir), title="Chọn file")
+        selected = filedialog.askdirectory(initialdir=str(initial_dir), title="Chọn folder")
     finally:
         root.destroy()
 
@@ -471,6 +466,97 @@ def _results_for_run(run_name: str | None = None) -> dict[str, Any]:
     return {"run": selected.name, "sources": sources}
 
 
+def _result_export_rows(data: dict[str, Any]) -> list[list[Any]]:
+    rows = [RESULT_EXPORT_HEADERS]
+    for source in data["sources"]:
+        for shrimp in source["shrimps"]:
+            rows.append(
+                [
+                    data["run"],
+                    source["source_file"],
+                    shrimp.get("track_id"),
+                    shrimp.get("frame_idx"),
+                    shrimp.get("pixel_length"),
+                    shrimp.get("real_length_mm"),
+                    shrimp.get("size"),
+                ]
+            )
+    return rows
+
+
+def _export_filename(data: dict[str, Any], suffix: str) -> str:
+    run_name = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(data["run"] or "empty"))
+    return f"shrimp_results_{run_name}.{suffix}"
+
+
+def _excel_column_name(index: int) -> str:
+    name = ""
+    while index:
+        index, remainder = divmod(index - 1, 26)
+        name = chr(65 + remainder) + name
+    return name
+
+
+def _xlsx_cell(value: Any, row_index: int, column_index: int) -> str:
+    cell_ref = f"{_excel_column_name(column_index)}{row_index}"
+    if value is None:
+        return f'<c r="{cell_ref}"/>'
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return f'<c r="{cell_ref}"><v>{value}</v></c>'
+    return f'<c r="{cell_ref}" t="inlineStr"><is><t>{xml_escape(str(value))}</t></is></c>'
+
+
+def _xlsx_bytes(rows: list[list[Any]]) -> bytes:
+    sheet_rows = []
+    for row_index, row in enumerate(rows, start=1):
+        cells = "".join(_xlsx_cell(value, row_index, column_index) for column_index, value in enumerate(row, start=1))
+        sheet_rows.append(f'<row r="{row_index}">{cells}</row>')
+
+    sheet_xml = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        f'<sheetData>{"".join(sheet_rows)}</sheetData>'
+        "</worksheet>"
+    )
+    files = {
+        "[Content_Types].xml": (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+            '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            "</Types>"
+        ),
+        "_rels/.rels": (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+            "</Relationships>"
+        ),
+        "xl/workbook.xml": (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            '<sheets><sheet name="Results" sheetId="1" r:id="rId1"/></sheets>'
+            "</workbook>"
+        ),
+        "xl/_rels/workbook.xml.rels": (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            "</Relationships>"
+        ),
+        "xl/worksheets/sheet1.xml": sheet_xml,
+    }
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        for name, content in files.items():
+            archive.writestr(name, content)
+    return buffer.getvalue()
+
+
 def _find_run_dir(run_name: str | None) -> Path | None:
     for run_dir in _run_dirs():
         if run_name is None or run_dir.name == run_name:
@@ -498,25 +584,20 @@ def _calibration_index(run_dir: Path) -> dict[tuple[str, str], dict[str, Any]]:
     return index
 
 
-def _least_squares_mm_per_px(samples: list[dict[str, Any]]) -> tuple[float, float, float, list[dict[str, Any]]]:
-    if len(samples) < 2:
-        raise ValueError("Cần ít nhất 2 mẫu hợp lệ để tính scale theo y = m x + b")
+def _least_squares_mm_per_px(samples: list[dict[str, Any]]) -> tuple[float, float, list[dict[str, Any]]]:
+    if not samples:
+        raise ValueError("Cần ít nhất 1 mẫu hợp lệ để tính scale")
 
-    n = len(samples)
-    sum_x = sum(sample["pixel_length"] for sample in samples)
-    sum_y = sum(sample["real_length_mm"] for sample in samples)
     sum_xx = sum(sample["pixel_length"] ** 2 for sample in samples)
     sum_xy = sum(sample["pixel_length"] * sample["real_length_mm"] for sample in samples)
-    denominator = n * sum_xx - sum_x ** 2
-    if denominator == 0:
-        raise ValueError("Cần ít nhất 2 mẫu có pixel_length khác nhau để tính scale theo y = m x + b")
+    if sum_xx == 0:
+        raise ValueError("pixel_length phải lớn hơn 0")
 
-    scale = (n * sum_xy - sum_x * sum_y) / denominator
-    intercept_mm = (sum_y - scale * sum_x) / n
+    scale = sum_xy / sum_xx
     enriched_samples = []
     squared_errors = []
     for sample in samples:
-        fitted_mm = sample["pixel_length"] * scale + intercept_mm
+        fitted_mm = sample["pixel_length"] * scale
         residual_mm = sample["real_length_mm"] - fitted_mm
         squared_errors.append(residual_mm ** 2)
         enriched_sample = dict(sample)
@@ -525,7 +606,7 @@ def _least_squares_mm_per_px(samples: list[dict[str, Any]]) -> tuple[float, floa
         enriched_samples.append(enriched_sample)
 
     rmse_mm = (sum(squared_errors) / len(squared_errors)) ** 0.5
-    return scale, intercept_mm, rmse_mm, enriched_samples
+    return scale, rmse_mm, enriched_samples
 
 
 @app.get("/")
@@ -694,7 +775,7 @@ def pipeline_log():
 
 @app.get("/api/config")
 def get_config():
-    return jsonify(_with_settings_errors("config", _jsonable_config()))
+    return _config_response()
 
 
 @app.put("/api/config")
@@ -704,41 +785,28 @@ def put_config():
         _write_config(data)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
-    return jsonify(_with_settings_errors("config", _jsonable_config()))
+    return _config_response()
 
 
 @app.post("/api/config/pick-path")
 def pick_config_path():
     payload = request.get_json(force=True, silent=True) or {}
     key = str(payload.get("key") or "").strip()
-    mode = str(payload.get("mode") or "file").strip()
+    mode = str(payload.get("mode") or "folder").strip()
     if key not in {"INPUT_DIR", "OUTPUT_DIR"}:
         return jsonify({"error": "Hằng số config không hợp lệ"}), 400
-    if mode not in {"file", "folder"}:
+    if mode != "folder":
         return jsonify({"error": "Kiểu chọn đường dẫn không hợp lệ"}), 400
 
     current = str(_jsonable_config().get(key, ""))
     try:
-        selected = _pick_local_path(mode, current)
+        selected = _pick_local_folder(current)
     except (RuntimeError, ValueError) as exc:
         return jsonify({"error": str(exc)}), 400
     if selected is None:
         return jsonify({"path": None, "cancelled": True})
 
-    if key in {"INPUT_DIR", "OUTPUT_DIR"} and selected.is_file():
-        selected = selected.parent
     return jsonify({"path": _relative_workspace_path(selected), "cancelled": False})
-
-
-@app.patch("/api/config/scale")
-def patch_scale():
-    try:
-        payload = request.get_json(force=True, silent=True) or {}
-        data = _validate_config_payload({"SCALE": payload.get("scale")})
-        _write_config(data)
-    except ValueError as exc:
-        return jsonify({"error": str(exc)}), 400
-    return jsonify(_with_settings_errors("config", _jsonable_config()))
 
 
 @app.post("/api/calibrate")
@@ -785,7 +853,6 @@ def calibrate_scale():
             errors.append(f"{source_stem} ID {track_id}: pixel_length phải lớn hơn 0")
             continue
 
-        sample_scale = real_length_mm / pixel_length
         samples.append(
             {
                 "source_stem": source_stem,
@@ -793,7 +860,6 @@ def calibrate_scale():
                 "track_id": record["track_id"],
                 "pixel_length": pixel_length,
                 "real_length_mm": real_length_mm,
-                "scale": sample_scale,
             }
         )
 
@@ -804,7 +870,7 @@ def calibrate_scale():
         return jsonify({"error": message, "errors": errors}), 400
 
     try:
-        new_scale, intercept_mm, rmse_mm, samples = _least_squares_mm_per_px(samples)
+        new_scale, rmse_mm, samples = _least_squares_mm_per_px(samples)
     except ValueError as exc:
         return jsonify({"error": str(exc), "errors": errors}), 400
 
@@ -813,21 +879,20 @@ def calibrate_scale():
     return jsonify(
         {
             "scale": config_data["SCALE"],
-            "intercept_mm": round(intercept_mm, 6),
-            "method": "least_squares_linear",
-            "formula": "real_length_mm = scale * pixel_length + intercept_mm",
+            "method": "least_squares_origin",
+            "formula": "real_length_mm = scale * pixel_length",
             "rmse_mm": round(rmse_mm, 6),
             "count": len(samples),
             "samples": samples,
             "errors": errors,
-            "config": _with_settings_errors("config", _jsonable_config()),
+            "config": _with_settings_errors(_jsonable_config()),
         }
     )
 
 
 @app.get("/api/config/sizes")
 def get_sizes():
-    return jsonify(_with_settings_errors("size", _jsonable_sizes()))
+    return _sizes_response()
 
 
 @app.put("/api/config/sizes")
@@ -837,7 +902,7 @@ def put_sizes():
         _write_sizes(data)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
-    return jsonify(_with_settings_errors("size", _jsonable_sizes()))
+    return _sizes_response()
 
 
 @app.get("/api/results/runs")
@@ -851,7 +916,7 @@ def result_runs():
                 data = json.loads(json_file.read_text(encoding="utf-8"))
                 shrimp_count += len(data.get("shrimps", []))
             except (OSError, json.JSONDecodeError):
-                pass
+                continue
         runs.append(
             {
                 "name": run_dir.name,
@@ -873,25 +938,21 @@ def export_csv():
     data = _results_for_run(request.args.get("run"))
     buffer = io.StringIO()
     writer = csv.writer(buffer)
-    writer.writerow(["run", "source_file", "track_id", "frame_idx", "pixel_length", "real_length_mm", "size"])
-    for source in data["sources"]:
-        for shrimp in source["shrimps"]:
-            writer.writerow(
-                [
-                    data["run"],
-                    source["source_file"],
-                    shrimp.get("track_id"),
-                    shrimp.get("frame_idx"),
-                    shrimp.get("pixel_length"),
-                    shrimp.get("real_length_mm"),
-                    shrimp.get("size"),
-                ]
-            )
-    filename = f"shrimp_results_{data['run'] or 'empty'}.csv"
+    writer.writerows(_result_export_rows(data))
     return Response(
         buffer.getvalue(),
         mimetype="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        headers={"Content-Disposition": f"attachment; filename={_export_filename(data, 'csv')}"},
+    )
+
+
+@app.get("/api/results/export-excel")
+def export_excel():
+    data = _results_for_run(request.args.get("run"))
+    return Response(
+        _xlsx_bytes(_result_export_rows(data)),
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={_export_filename(data, 'xlsx')}"},
     )
 
 

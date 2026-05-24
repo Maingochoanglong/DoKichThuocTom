@@ -27,11 +27,11 @@ def clear_settings_errors() -> None:
     _SETTINGS_ERRORS.clear()
 
 
-def get_settings_errors(section: str | None = None) -> list[str]:
+def get_settings_errors() -> list[str]:
     return list(_SETTINGS_ERRORS.values())
 
 
-def save_settings_section(section: str, values: dict[str, Any]) -> None:
+def save_settings(section: str, values: dict[str, Any]) -> None:
     try:
         settings = _read_settings() if SETTINGS_PATH.exists() else {}
     except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:

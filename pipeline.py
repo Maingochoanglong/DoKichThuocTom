@@ -21,7 +21,7 @@ import supervision as sv
 from skimage.morphology import medial_axis
 
 from config import (
-    BBOX_PAD, CHUNK_MODE, CLEAR_INPUT, CONF_DET, CONF_SEG, CONVEYOR_VERTICAL,
+    BBOX_PAD, CHUNK_MODE, CLEAR_INPUT, CONF_DET, CONF_SEG, DEVICE, CONVEYOR_VERTICAL,
     IMG_EXTS, INPUT_DIR,
     REQUIRED_TOUCHES, SAVE, SCALE, TARGET_FPS, TOUCH_THRESHOLD, VID_EXTS,
 )
@@ -132,7 +132,7 @@ def flow2_detect_track(model_det, q_f1_f2, q_f2_f3, flow_times: dict) -> None:
 
         results = model_det.predict(
             source=item["frame"],
-            verbose=False, conf=CONF_DET, device="intel:gpu",
+            verbose=False, conf=CONF_DET, device=DEVICE,
         )[0]
         detections = sv.Detections.from_ultralytics(results)
 
@@ -332,7 +332,7 @@ def flow4_segment(model_seg, q_f3_f4, q_f4_f5, flow_times: dict) -> None:
         results = model_seg.predict(
             source=item["masked_img"],
             verbose=False, conf=CONF_SEG,
-            retina_masks=True, device="intel:gpu",
+            retina_masks=True, device=DEVICE,
         )[0]
         detections = sv.Detections.from_ultralytics(results)
 

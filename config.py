@@ -6,10 +6,7 @@
 # - Các ngưỡng CONF nằm trong khoảng 0.0 đến 1.0.
 # - Các khoảng cách/chiều dài ghi bằng pixel hoặc mm sẽ được chú thích riêng.
 
-from settings_loader import clear_settings_errors, load_setting
-
-
-clear_settings_errors()
+from settings_loader import load_setting
 
 
 # Bảng màu BGR dùng trực tiếp với OpenCV để vẽ track, mask, skeleton và ảnh debug.
@@ -29,6 +26,8 @@ COLOR = [
     (0, 255, 128),  # Xanh ngọc
 ]
 
+# Kích thước hàng đợi giữa các flow
+QUEUE_SIZE = 32
 
 # Thư mục chứa ảnh/video đầu vào. Upload từ giao diện web sẽ lưu vào đây.
 INPUT_DIR = str(load_setting("INPUT_DIR", 'input'))
@@ -51,8 +50,10 @@ CHUNK_MODE = bool(load_setting("CHUNK_MODE", False))
 # Đường dẫn model phát hiện tôm. Có thể là file .pt hoặc thư mục OpenVINO model.
 MODEL_DET = 'model/yolov8_det_v65_openvino_model'
 
+
 # Đường dẫn model phân đoạn tôm để tạo mask thân tôm. Có thể là file .pt hoặc thư mục OpenVINO model.
-MODEL_SEG = 'model/yolov8n-seg_shrimp_openvino_model'
+# MODEL_SEG = 'model/yolov8n-seg_shrimp_openvino_model'
+MODEL_SEG = 'model/yolov8_seg_v65_openvino_model'
 
 # Hệ số quy đổi pixel -> mm.
 # Ví dụ SCALE = 0.35 nghĩa là 1 pixel tương ứng 0.35 mm.
@@ -72,6 +73,8 @@ CONF_DET = float(load_setting("CONF_DET", 0.5))
 # Ngưỡng tin cậy cho bước phân đoạn mask thân tôm.
 # Tăng giá trị để mask chắc hơn, giảm giá trị để mask rộng/nhạy hơn.
 CONF_SEG = float(load_setting("CONF_SEG", 0.5))
+
+DEVICE = 'intel:gpu'
 
 # Số pixel nới rộng quanh bounding box trước khi cắt vùng tôm để xử lý tiếp.
 # Giá trị lớn giúp tránh cắt cụt đầu/đuôi, nhưng quá lớn có thể kéo thêm nhiễu nền.

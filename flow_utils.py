@@ -40,6 +40,6 @@ def get_masked_image(frame: np.ndarray, box_xyxy: np.ndarray | list, pad: int = 
     x2 = min(w, x2 + pad);  y2 = min(h, y2 + pad)
     if x2 <= x1 or y2 <= y1:
         return None
-    out = np.full_like(frame, 255)
+    out = np.full_like(frame, 114)
     out[y1:y2, x1:x2] = frame[y1:y2, x1:x2]
     return out

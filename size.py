@@ -3,10 +3,7 @@ size.py
 Định nghĩa các hằng số và hàm phân loại kích cỡ tôm theo chiều dài thực (mm).
 """
 
-from settings_loader import clear_settings_errors, load_setting
-
-
-clear_settings_errors()
+from settings_loader import load_setting
 
 
 # Bảng phân loại kích cỡ (từ mm đến mm)
@@ -14,11 +11,7 @@ SIZE_RANGES: dict[str, tuple[float, float]] = {
     str(label): (float(bounds[0]), float(bounds[1]))
     for label, bounds in load_setting(
         "SIZE_RANGES",
-        {
-            'S': (100.0, 125.0),
-            'M': (125.0, 160.0),
-            'L': (160.0, 200.0),
-        },
+        {},
     ).items()
 }
 

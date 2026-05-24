@@ -1,4 +1,4 @@
-__pycache__/
+__pycache__/*
 .conda/
 .vscode/
 input/
@@ -9,6 +9,7 @@ benchmark/
 test/
 test1/
 scale/
+cong/
 chunk_test/
 compare_outputs.py
 extract_largest_shrimp.py
