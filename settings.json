@@ -1,11 +1,11 @@
 {
   "config": {
-    "INPUT_DIR": "scale",
+    "INPUT_DIR": "chunk_test",
     "OUTPUT_DIR": "output",
     "CLEAR_OUTPUT": false,
     "CLEAR_INPUT": false,
-    "CHUNK_MODE": false,
-    "SCALE": 1.0,
+    "CHUNK_MODE": true,
+    "SCALE": 0.16953,
     "CONF_DET": 0.5,
     "CONF_SEG": 0.5,
     "BBOX_PAD": 10,
