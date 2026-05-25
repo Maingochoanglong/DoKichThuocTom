@@ -27,23 +27,23 @@
         --color-console-text: #a3e635;
       }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260525-pager">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260526-config-scale">
   </head>
   <body class="min-h-screen overflow-x-hidden bg-shop-floor text-ink antialiased">
     <a class="skip-link" href="#dataTab">Bỏ qua đầu trang</a>
     <div class="app-shell grid min-h-screen min-w-0">
-      <header class="app-header flex min-w-0 flex-col items-stretch gap-2 border-b border-line-strong bg-panel px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
+      <header class="app-header flex min-w-0 flex-col items-stretch gap-2 border-b border-line-strong bg-panel px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4 md:px-5 lg:px-6 xl:px-7 2xl:px-8">
         <div class="min-w-0">
-          <div class="text-[10px] font-bold uppercase leading-tight text-dim sm:text-[11px]">Bảng điều khiển đo tôm</div>
-          <h1 class="text-xl font-extrabold uppercase leading-tight text-ink sm:text-2xl">Shrimp Measure</h1>
+          <div class="text-[10px] font-bold uppercase leading-tight text-dim sm:text-[11px] md:text-xs">Bảng điều khiển đo tôm</div>
+          <h1 class="text-xl font-extrabold uppercase leading-tight text-ink sm:text-2xl lg:text-[1.7rem] 2xl:text-3xl">Shrimp Measure</h1>
         </div>
-        <div class="grid min-w-0 w-full grid-cols-2 items-center gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
+        <div class="grid min-w-0 w-full grid-cols-2 items-center gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end md:gap-3 lg:flex-nowrap">
           <span class="status-chip justify-center" id="pipelineStatus">Sẵn sàng</span>
           <span class="scale-chip justify-center" id="scaleChip">SCALE: -- mm/px</span>
         </div>
       </header>
 
-      <main class="app-main grid min-h-0 min-w-0 gap-3 overflow-hidden p-3">
+      <main class="app-main grid min-h-0 min-w-0 gap-3 overflow-hidden p-3 sm:gap-3 sm:p-3 md:gap-4 md:p-4 lg:gap-4 lg:p-4 xl:gap-5 xl:p-5 2xl:mx-auto 2xl:w-full 2xl:max-w-[1480px] 2xl:p-6">
         <nav class="browser-tabs" aria-label="Điều hướng dashboard">
           <button class="browser-tab active" id="tabData" type="button" data-tab-target="dataTab" aria-controls="dataTab" aria-selected="true">DỮ LIỆU</button>
           <button class="browser-tab" id="tabResults" type="button" data-tab-target="resultsTab" aria-controls="resultsTab" aria-selected="false">KẾT QUẢ</button>
@@ -74,14 +74,14 @@
                 </div>
                 <div class="upload-progress" id="uploadProgress" role="status" aria-live="polite" hidden>
                   <div class="upload-progress-copy">
-                    <strong id="uploadProgressTitle">Đang nạp file</strong>
+                    <strong>Đang nạp file</strong>
                     <span id="uploadProgressText">0%</span>
                   </div>
                   <div class="upload-progress-track" aria-hidden="true">
                     <span id="uploadProgressBar"></span>
                   </div>
                 </div>
-                <div class="pager-top" id="inputPagerTop">
+                <div class="pager-top">
                   <span class="pager-info" id="inputPageInfo">0 file</span>
                   <label class="pager-size" for="inputPageSize">
                     <span>Dòng/trang</span>
@@ -308,20 +308,14 @@
                     <div class="config-grid config-storage-grid">
                       <div class="min-w-0 config-path-field">
                         <label class="form-label" for="cfg_INPUT_DIR">INPUT_DIR</label>
-                        <div class="grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-1.5">
-                          <input class="form-control" id="cfg_INPUT_DIR" type="text">
-                          <button class="input-picker-btn config-picker-btn" type="button" data-pick-path data-config-key="INPUT_DIR" data-pick-mode="folder">Folder</button>
-                        </div>
-                        <div class="form-help">Thư mục chứa ảnh/video sẽ được đưa vào pipeline đo.</div>
+                        <input class="form-control" id="cfg_INPUT_DIR" type="text">
+                        <div class="form-help">Thư mục chứa ảnh/video đầu vào cần đo.</div>
                       </div>
 
                       <div class="min-w-0 config-path-field">
                         <label class="form-label" for="cfg_OUTPUT_DIR">OUTPUT_DIR</label>
-                        <div class="grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-1.5">
-                          <input class="form-control" id="cfg_OUTPUT_DIR" type="text">
-                          <button class="input-picker-btn config-picker-btn" type="button" data-pick-path data-config-key="OUTPUT_DIR" data-pick-mode="folder">Folder</button>
-                        </div>
-                        <div class="form-help">Thư mục ghi JSON kết quả, log chạy và ảnh debug sau khi đo.</div>
+                        <input class="form-control" id="cfg_OUTPUT_DIR" type="text">
+                        <div class="form-help">Thư mục lưu ảnh kết quả và file JSON đầu ra.</div>
                       </div>
 
                       <label class="toggle-line config-toggle-field">
@@ -501,6 +495,6 @@
       </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260525-responsive"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260525-cleanup"></script>
   </body>
 </html>

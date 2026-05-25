@@ -3,7 +3,7 @@
     "INPUT_DIR": "input",
     "OUTPUT_DIR": "output",
     "CLEAR_OUTPUT": false,
-    "CLEAR_INPUT": true,
+    "CLEAR_INPUT": false,
     "CHUNK_MODE": false,
     "SCALE": 0.16953,
     "CONF_DET": 0.5,

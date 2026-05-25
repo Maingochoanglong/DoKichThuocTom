@@ -31,16 +31,8 @@ const state = {
 
 const $ = (id) => document.getElementById(id);
 
-const JSON_HEADERS = {"Content-Type": "application/json"};
+const JSON_HEADERS = { "Content-Type": "application/json" };
 const RUNNING_LOCKED_TABS = new Set(["configTab", "sizesTab"]);
-const pathHelpRefs = {
-  inputDirEl: null,
-  inputDirHelp: null,
-  inputDirBaseHelp: "",
-  outputDirEl: null,
-  outputDirHelp: null,
-  outputDirBaseHelp: "",
-};
 
 const heroIcon = (paths, width = "1.5") => (
   `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${width}" aria-hidden="true">` +
@@ -238,10 +230,10 @@ function toast(message, type = "ok", options = {}) {
   const box = $("toast");
   const body = $("toastBody") || box;
   const variants = {
-    ok: {title: "Thông báo", icon: "i"},
-    success: {title: "Thành công", icon: "✓"},
-    warning: {title: "Cảnh báo", icon: "!"},
-    error: {title: "Lỗi", icon: "!"},
+    ok: { title: "Thông báo", icon: "i" },
+    success: { title: "Thành công", icon: "✓" },
+    warning: { title: "Cảnh báo", icon: "!" },
+    error: { title: "Lỗi", icon: "!" },
   };
   const variant = variants[type] || variants.ok;
   body.innerHTML = "";
@@ -292,7 +284,7 @@ function pageWindow(total, page, pageSize) {
   const currentPage = clampPage(page, totalPages);
   const start = total ? (currentPage - 1) * pageSize : 0;
   const end = total ? Math.min(start + pageSize, total) : 0;
-  return {totalPages, currentPage, start, end};
+  return { totalPages, currentPage, start, end };
 }
 
 function pageNumberWindow(currentPage, totalPages) {
@@ -354,32 +346,6 @@ function updateConfidenceLabels() {
 
 function isConfidenceKey(key) {
   return key === "CONF_DET" || key === "CONF_SEG";
-}
-
-function isAbsolutePath(value) {
-  if (!value) return false;
-  if (/^[A-Za-z]:[/\\]/.test(value)) return true;
-  if (value.startsWith("/")) return true;
-  return false;
-}
-
-function updatePathHelp(inputEl, helpEl, baseHelpText) {
-  if (!inputEl || !helpEl) return;
-  const value = inputEl.value.trim();
-  if (!value) {
-    helpEl.textContent = baseHelpText;
-    return;
-  }
-  if (isAbsolutePath(value)) {
-    helpEl.textContent = `Đường dẫn tuyệt đối: Flask sẽ đọc hoặc ghi trực tiếp tại ${value}`;
-  } else {
-    helpEl.textContent = `Đường dẫn tương đối: Flask sẽ tính từ BASE_DIR của ứng dụng với giá trị ${value}`;
-  }
-}
-
-function refreshPathHelp() {
-  updatePathHelp(pathHelpRefs.inputDirEl, pathHelpRefs.inputDirHelp, pathHelpRefs.inputDirBaseHelp);
-  updatePathHelp(pathHelpRefs.outputDirEl, pathHelpRefs.outputDirHelp, pathHelpRefs.outputDirBaseHelp);
 }
 
 function setRunning(running) {
@@ -445,7 +411,7 @@ async function refreshStatus() {
     }
     if (wasRunning && !status.running) {
       await pollLog();
-      await loadRuns({preferLatest: true});
+      await loadRuns({ preferLatest: true });
       await loadResults();
       if (status.returncode === 0) {
         activateTab("resultsTab");
@@ -522,7 +488,6 @@ function applyConfig(config) {
   });
   updateConfidenceLabels();
   $("scaleChip").textContent = `SCALE: ${Number(state.config.SCALE).toFixed(4)} mm/px`;
-  refreshPathHelp();
 }
 
 async function loadConfig() {
@@ -538,9 +503,20 @@ function collectConfig() {
     } else if (isConfidenceKey(key)) {
       payload[key] = Number(input.value) / 100;
     } else if (input.type === "number") {
-      payload[key] = Number(input.value);
+      const valStr = input.value.trim();
+      const numVal = Number(input.value);
+      if (valStr === "" || Number.isNaN(numVal)) {
+        payload[key] = (state.config && state.config[key] !== undefined) ? state.config[key] : 0;
+      } else {
+        payload[key] = numVal;
+      }
     } else {
-      payload[key] = input.value.trim();
+      const valStr = input.value.trim();
+      if (valStr === "") {
+        payload[key] = (state.config && state.config[key] !== undefined) ? state.config[key] : "";
+      } else {
+        payload[key] = valStr;
+      }
     }
   });
   return payload;
@@ -557,7 +533,7 @@ async function saveConfig(event) {
   try {
     await saveCurrentConfig();
     flashSaved(submitter, "Đã lưu config");
-    toast("Cấu hình đã được lưu chính thức vào settings.json", "success", {title: "Đã lưu cấu hình"});
+    toast("Cấu hình đã được lưu chính thức vào settings.json", "success", { title: "Đã lưu cấu hình" });
   } catch (error) {
     toast(error.message, "error");
   }
@@ -652,13 +628,13 @@ async function saveSizes(event) {
   try {
     applySizes(await sendJson("/api/config/sizes", "PUT", collectSizes()));
     flashSaved(submitter, "Đã lưu phân loại");
-    toast("Bảng phân loại kích cỡ đã được lưu chính thức vào settings.json", "success", {title: "Đã lưu phân loại"});
+    toast("Bảng phân loại kích cỡ đã được lưu chính thức vào settings.json", "success", { title: "Đã lưu phân loại" });
   } catch (error) {
     toast(error.message, "error");
   }
 }
 
-function setUploadProgress({visible = true, percent = 0, text = ""} = {}) {
+function setUploadProgress({ visible = true, percent = 0, text = "" } = {}) {
   const box = $("uploadProgress");
   if (!box) return;
   box.hidden = !visible;
@@ -682,10 +658,10 @@ function uploadRequest(form) {
     xhr.open("POST", "/api/files/upload");
     xhr.upload.addEventListener("progress", (event) => {
       if (!event.lengthComputable) {
-        setUploadProgress({percent: 0, text: "Đang nạp"});
+        setUploadProgress({ percent: 0, text: "Đang nạp" });
         return;
       }
-      setUploadProgress({percent: (event.loaded / event.total) * 100});
+      setUploadProgress({ percent: (event.loaded / event.total) * 100 });
     });
     xhr.addEventListener("load", () => {
       let payload = xhr.response;
@@ -714,10 +690,10 @@ async function uploadFiles(files) {
   const form = new FormData();
   Array.from(files).forEach((file) => form.append("files", file));
   setUploading(true);
-  setUploadProgress({visible: true, percent: 0, text: "Chuẩn bị nạp"});
+  setUploadProgress({ visible: true, percent: 0, text: "Chuẩn bị nạp" });
   try {
     const result = await uploadRequest(form);
-    setUploadProgress({visible: true, percent: 100, text: "Hoàn tất"});
+    setUploadProgress({ visible: true, percent: 100, text: "Hoàn tất" });
     await loadInputFiles();
     const saved = result.saved?.length || 0;
     const rejected = result.rejected?.length || 0;
@@ -728,12 +704,12 @@ async function uploadFiles(files) {
     $("fileInput").value = "";
     $("folderInput").value = "";
     setUploading(false);
-    window.setTimeout(() => setUploadProgress({visible: false}), 900);
+    window.setTimeout(() => setUploadProgress({ visible: false }), 900);
   }
 }
 
 function skeletonMarkup(count = 3) {
-  return `<div class="skeleton-list" aria-hidden="true">${Array.from({length: count}, () => "<span class=\"skeleton-line\"></span>").join("")}</div>`;
+  return `<div class="skeleton-list" aria-hidden="true">${Array.from({ length: count }, () => "<span class=\"skeleton-line\"></span>").join("")}</div>`;
 }
 
 async function loadInputFiles() {
@@ -763,7 +739,7 @@ function renderInputFiles() {
     list.innerHTML = `<div class="empty-state compact">Input đang trống</div>`;
     if (pager) pager.hidden = true;
     $("inputPageInfo").textContent = "0 file";
-    renderPageNumbers("inputPageButtons", 1, 1, () => {});
+    renderPageNumbers("inputPageButtons", 1, 1, () => { });
     $("inputPrevPage").disabled = true;
     $("inputNextPage").disabled = true;
     return;
@@ -804,7 +780,7 @@ async function deleteInputFile(name) {
   });
   if (!confirmed) return;
   try {
-    await requestJson(`/api/files/input/${encodeURIComponent(name)}`, {method: "DELETE"});
+    await requestJson(`/api/files/input/${encodeURIComponent(name)}`, { method: "DELETE" });
     await loadInputFiles();
     toast(`Đã xóa ${name}`, "success");
   } catch (error) {
@@ -850,7 +826,7 @@ async function runPipeline() {
     window.setTimeout(() => runBtn.classList.remove("run-clicked"), 260);
     $("logBody").textContent = "";
     state.logOffset = 0;
-    const payload = await requestJson("/api/pipeline/run", {method: "POST"});
+    const payload = await requestJson("/api/pipeline/run", { method: "POST" });
     updateStatusView(payload.status);
     await pollLog();
     if (payload.status?.running) {
@@ -862,7 +838,7 @@ async function runPipeline() {
   }
 }
 
-async function loadRuns({preferLatest = false} = {}) {
+async function loadRuns({ preferLatest = false } = {}) {
   const payload = await requestJson("/api/results/runs");
   const select = $("runSelect");
   const previous = state.selectedRun || select.value;
@@ -903,11 +879,11 @@ function flattenImages(images) {
     if (Array.isArray(value)) {
       value.forEach((url, index) => {
         const fileName = imageFileName(url);
-        list.push({label: fileName ? `${key}_${index + 1} · ${fileName}` : `${key}_${index + 1}`, url});
+        list.push({ label: fileName ? `${key}_${index + 1} · ${fileName}` : `${key}_${index + 1}`, url });
       });
     } else if (value) {
       const fileName = imageFileName(value);
-      list.push({label: fileName ? `${key} · ${fileName}` : key, url: value});
+      list.push({ label: fileName ? `${key} · ${fileName}` : key, url: value });
     }
   });
   return list;
@@ -962,7 +938,7 @@ function renderResults(data) {
     const allShrimps = source.shrimps || [];
     allShrimps.forEach((shrimp, shrimpIndex) => {
       if (!filter || String(shrimp.size) === filter) {
-        rows.push({source, sourceIndex, shrimp, shrimpIndex, allCount: allShrimps.length});
+        rows.push({ source, sourceIndex, shrimp, shrimpIndex, allCount: allShrimps.length });
       }
     });
   });
@@ -990,7 +966,7 @@ function renderResults(data) {
   const groups = new Map();
   pageRows.forEach((row) => {
     if (!groups.has(row.sourceIndex)) {
-      groups.set(row.sourceIndex, {source: row.source, sourceIndex: row.sourceIndex, allCount: row.allCount, rows: []});
+      groups.set(row.sourceIndex, { source: row.source, sourceIndex: row.sourceIndex, allCount: row.allCount, rows: [] });
     }
     groups.get(row.sourceIndex).rows.push(row);
   });
@@ -999,7 +975,7 @@ function renderResults(data) {
     const block = document.createElement("details");
     block.className = "source-block";
     block.open = true;
-    const rowsHtml = group.rows.map(({source, sourceIndex: rowSourceIndex, shrimp, shrimpIndex}) => {
+    const rowsHtml = group.rows.map(({ source, sourceIndex: rowSourceIndex, shrimp, shrimpIndex }) => {
       const images = flattenImages(shrimp.images);
       const imageKey = `${rowSourceIndex}_${source.source_stem}_${shrimp.track_id}_${shrimpIndex}`;
       if (images.length) {
@@ -1139,7 +1115,8 @@ function currentScaleOrderRows() {
       }
     });
   });
-  return rows;
+  const windowInfo = pageWindow(rows.length, state.resultPage, state.resultPageSize);
+  return rows.slice(windowInfo.start, windowInfo.end);
 }
 
 function setScaleImporting(importing) {
@@ -1184,7 +1161,7 @@ async function importScaleFile(file) {
     toast(
       warningText || `Đã tự điền ${result.count}/${result.expected_count} dòng mm thực tế`,
       warningText ? "warning" : "success",
-      {title: warningText ? "Đã nạp file scale" : "Đã tự điền scale", duration: warningText ? 7000 : 3600},
+      { title: warningText ? "Đã nạp file scale" : "Đã tự điền scale", duration: warningText ? 7000 : 3600 },
     );
   } catch (error) {
     toast(error.message, "error");
@@ -1212,7 +1189,7 @@ async function applyScale() {
     await loadConfig();
     await loadResults();
     flashSaved($("applyScaleBtn"), "Đã lưu scale");
-    toast(`SCALE = ${Number(result.scale).toFixed(6)} mm/px theo y = SCALE x pixel từ ${result.count} mẫu`, "success", {title: "Đã lưu scale"});
+    toast(`SCALE = ${Number(result.scale).toFixed(6)} mm/px theo y = SCALE x pixel từ ${result.count} mẫu`, "success", { title: "Đã lưu scale" });
   } catch (error) {
     toast(error.message, "error");
   }
@@ -1382,25 +1359,8 @@ function bindModalEvents() {
   });
 }
 
-function bindPathHelpEvents() {
-  pathHelpRefs.inputDirEl = $("cfg_INPUT_DIR");
-  pathHelpRefs.outputDirEl = $("cfg_OUTPUT_DIR");
-  pathHelpRefs.inputDirHelp = pathHelpRefs.inputDirEl?.closest(".min-w-0")?.querySelector(".form-help") || null;
-  pathHelpRefs.outputDirHelp = pathHelpRefs.outputDirEl?.closest(".min-w-0")?.querySelector(".form-help") || null;
-  pathHelpRefs.inputDirBaseHelp = pathHelpRefs.inputDirHelp?.textContent || "";
-  pathHelpRefs.outputDirBaseHelp = pathHelpRefs.outputDirHelp?.textContent || "";
-
-  pathHelpRefs.inputDirEl?.addEventListener("input", () => {
-    updatePathHelp(pathHelpRefs.inputDirEl, pathHelpRefs.inputDirHelp, pathHelpRefs.inputDirBaseHelp);
-  });
-  pathHelpRefs.outputDirEl?.addEventListener("input", () => {
-    updatePathHelp(pathHelpRefs.outputDirEl, pathHelpRefs.outputDirHelp, pathHelpRefs.outputDirBaseHelp);
-  });
-}
-
 function bindEvents() {
   bindModalEvents();
-  bindPathHelpEvents();
   applyPagerIcons();
   syncPageButtonCountSelects();
   document.querySelectorAll("[data-tab-target]").forEach((button) => {
