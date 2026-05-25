@@ -1,14 +1,14 @@
 {
   "config": {
-    "INPUT_DIR": "chunk_test",
+    "INPUT_DIR": "scale",
     "OUTPUT_DIR": "output",
     "CLEAR_OUTPUT": false,
     "CLEAR_INPUT": false,
-    "CHUNK_MODE": true,
-    "SCALE": 0.00106,
+    "CHUNK_MODE": false,
+    "SCALE": 1.0,
     "CONF_DET": 0.5,
     "CONF_SEG": 0.5,
-    "BBOX_PAD": 5,
+    "BBOX_PAD": 10,
     "TOUCH_THRESHOLD": 10.0,
     "TARGET_FPS": 0.0,
     "CONVEYOR_VERTICAL": false,
