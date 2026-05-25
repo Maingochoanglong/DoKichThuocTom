@@ -27,23 +27,23 @@
         --color-console-text: #a3e635;
       }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260524-cleanup">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260525-pager">
   </head>
   <body class="min-h-screen overflow-x-hidden bg-shop-floor text-ink antialiased">
     <a class="skip-link" href="#dataTab">Bỏ qua đầu trang</a>
-    <div class="grid min-h-screen min-w-0 grid-rows-[56px_minmax(0,1fr)]">
-      <header class="flex min-w-0 items-center justify-between gap-3 border-b border-line-strong bg-panel px-4 py-2">
+    <div class="app-shell grid min-h-screen min-w-0">
+      <header class="app-header flex min-w-0 flex-col items-stretch gap-2 border-b border-line-strong bg-panel px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
         <div class="min-w-0">
-          <div class="text-[11px] font-bold uppercase text-dim">Bảng điều khiển đo tôm</div>
-          <h1 class="truncate text-2xl font-extrabold uppercase text-ink">Shrimp Measure</h1>
+          <div class="text-[10px] font-bold uppercase leading-tight text-dim sm:text-[11px]">Bảng điều khiển đo tôm</div>
+          <h1 class="text-xl font-extrabold uppercase leading-tight text-ink sm:text-2xl">Shrimp Measure</h1>
         </div>
-        <div class="flex min-w-0 flex-wrap items-center justify-end gap-2">
-          <span class="status-chip" id="pipelineStatus">Sẵn sàng</span>
-          <span class="scale-chip" id="scaleChip">SCALE: -- mm/px</span>
+        <div class="grid min-w-0 w-full grid-cols-2 items-center gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
+          <span class="status-chip justify-center" id="pipelineStatus">Sẵn sàng</span>
+          <span class="scale-chip justify-center" id="scaleChip">SCALE: -- mm/px</span>
         </div>
       </header>
 
-      <main class="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden p-3">
+      <main class="app-main grid min-h-0 min-w-0 gap-3 overflow-hidden p-3">
         <nav class="browser-tabs" aria-label="Điều hướng dashboard">
           <button class="browser-tab active" id="tabData" type="button" data-tab-target="dataTab" aria-controls="dataTab" aria-selected="true">DỮ LIỆU</button>
           <button class="browser-tab" id="tabResults" type="button" data-tab-target="resultsTab" aria-controls="resultsTab" aria-selected="false">KẾT QUẢ</button>
@@ -501,6 +501,6 @@
       </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260524-cleanup"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260525-responsive"></script>
   </body>
 </html>

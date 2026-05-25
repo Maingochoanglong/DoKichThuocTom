@@ -121,7 +121,7 @@ def flow2_detect_track(model_det, q_f1_f2, q_f2_f3, flow_times: dict) -> None:
     """
     log           = get_logger()
     start_time    = time.perf_counter()
-    tracker       = sv.ByteTrack() if CHUNK_MODE else None
+    tracker: sv.ByteTrack | None = None
     current_video = None
 
     while True:
@@ -157,10 +157,10 @@ def flow2_detect_track(model_det, q_f1_f2, q_f2_f3, flow_times: dict) -> None:
 
         elif item["type"] == "video":
             if item["path"] != current_video:
-                if not CHUNK_MODE:
+                if tracker is None or not CHUNK_MODE:
                     tracker = sv.ByteTrack()
+                    log.info(f"[F2] Tracker mới cho: {item['path'].name}")
                 current_video = item["path"]
-                log.info(f"[F2] Tracker mới cho: {current_video.name}")
 
             detections = tracker.update_with_detections(detections)
             if len(detections) > 0:
@@ -224,10 +224,12 @@ def flow3_touch_logic(q_f2_f3, q_f3_f4, flow_times: dict) -> None:
     def flush_all_active_tracks():
         if current_video is None:
             return
-        for track_id, track_data in active_tracks.items():
+        source_stem = current_video.stem
+        source_file = current_video.name
+        for track_id, track_data in list(active_tracks.items()):
             flush_track_to_f4(
                 track_id, track_data,
-                current_video.stem, current_video.name, current_lines,
+                source_stem, source_file, current_lines,
                 current_run_dir,
             )
 
@@ -363,7 +365,7 @@ def flow4_segment(model_seg, q_f3_f4, q_f4_f5, flow_times: dict) -> None:
         crop_mask = mask_full[y1:y2, x1:x2]
 
         if SAVE:
-            paths = save_f4_debug(item, mask_full.copy(), seg_xyxy.copy(), crop_mask.copy())
+            paths = save_f4_debug(item, mask_full, seg_xyxy, crop_mask)
             item["debug_images"].update(paths)
 
         annot_cx, annot_cy = best_det.get_anchors_coordinates(sv.Position.CENTER)[0]
@@ -455,13 +457,13 @@ def flow6_save_results(q_f5_f6, flow_times: dict) -> None:
 
     json_data: dict[str, dict] = {}
     stem_to_file: dict[str, str] = {}
-    current_run_dir: str | None = None
+    stem_to_run_dir: dict[str, str] = {}
     prev_stem: str | None = None
 
     def _flush_json(stem: str) -> None:
         if stem not in json_data:
             return
-        out_dir = Path(current_run_dir) / stem
+        out_dir = Path(stem_to_run_dir[stem]) / stem
         out_dir.mkdir(parents=True, exist_ok=True)
         json_path = out_dir / f"{stem}_results.json"
         with open(json_path, "w", encoding="utf-8") as f:
@@ -491,12 +493,13 @@ def flow6_save_results(q_f5_f6, flow_times: dict) -> None:
             _flush_json(prev_stem)
             json_data.pop(prev_stem, None)
             stem_to_file.pop(prev_stem, None)
+            stem_to_run_dir.pop(prev_stem, None)
 
         prev_stem = stem
 
         if stem not in stem_to_file:
             stem_to_file[stem] = item["source_file"]
-            current_run_dir = item["run_dir"]
+            stem_to_run_dir[stem] = item["run_dir"]
 
         if stem not in json_data:
             json_data[stem] = {

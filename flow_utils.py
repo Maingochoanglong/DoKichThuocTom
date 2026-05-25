@@ -5,7 +5,7 @@ Các hàm tiện ích hỗ trợ cho toàn bộ hệ thống đo chiều dài t�
   ensure_dir       - Tạo thư mục nếu chưa tồn tại
   get_lines        - Tính 3 vạch tham chiếu (dọc hoặc ngang) để xác nhận tôm trôi qua
   box_touches_line - Kiểm tra tâm bounding box của tôm có chạm vạch không
-  get_masked_image - Tạo ảnh nền đen, chỉ giữ lại vùng bounding box chứa tôm
+  get_masked_image - Tạo ảnh nền xám (114), chỉ giữ lại vùng bounding box chứa tôm
 """
 
 import numpy as np
@@ -31,8 +31,10 @@ def box_touches_line(center: float, line_coord: int, threshold: int) -> bool:
     # Kiểm tra tâm bounding box (cx hoặc cy) có nằm trong ngưỡng chạm vạch không.
     return abs(center - line_coord) <= threshold
 
+
 def get_masked_image(frame: np.ndarray, box_xyxy: np.ndarray | list, pad: int = BBOX_PAD) -> np.ndarray | None:
-    # Tạo ảnh nền TRẮNG cùng kích thước frame, chỉ giữ lại vùng bounding box (+ padding).
+    # Tạo ảnh nền xám (114 — chuẩn YOLO padding) cùng kích thước frame,
+    # chỉ giữ lại vùng bounding box (+ padding).
     # Trả về None nếu vùng crop rỗng sau khi clamp về biên ảnh.
     h, w = frame.shape[:2]
     x1, y1, x2, y2 = map(int, box_xyxy)

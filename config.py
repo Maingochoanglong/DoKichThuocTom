@@ -27,7 +27,7 @@ COLOR = [
 ]
 
 # Kích thước hàng đợi giữa các flow
-QUEUE_SIZE = 32
+QUEUE_SIZE = 0
 
 # Thư mục chứa ảnh/video đầu vào. Upload từ giao diện web sẽ lưu vào đây.
 INPUT_DIR = str(load_setting("INPUT_DIR", 'input'))
@@ -48,12 +48,11 @@ CLEAR_INPUT = bool(load_setting("CLEAR_INPUT", False))
 CHUNK_MODE = bool(load_setting("CHUNK_MODE", False))
 
 # Đường dẫn model phát hiện tôm. Có thể là file .pt hoặc thư mục OpenVINO model.
-MODEL_DET = 'model/yolov8_det_v65_openvino_model'
+MODEL_DET = 'model/yolov8n_det_v6_openvino_model'
 
 
 # Đường dẫn model phân đoạn tôm để tạo mask thân tôm. Có thể là file .pt hoặc thư mục OpenVINO model.
-# MODEL_SEG = 'model/yolov8n-seg_shrimp_openvino_model'
-MODEL_SEG = 'model/yolov8_seg_v65_openvino_model'
+MODEL_SEG = 'model/yolov8n_seg_v74_openvino_model'
 
 # Hệ số quy đổi pixel -> mm.
 # Ví dụ SCALE = 0.35 nghĩa là 1 pixel tương ứng 0.35 mm.

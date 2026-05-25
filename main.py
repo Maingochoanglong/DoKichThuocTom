@@ -10,7 +10,7 @@ import threading
 import time
 import traceback
 from pathlib import Path
-from queue import Queue
+from queue import Empty, Full, Queue
 
 import openvino as ov
 os.makedirs("openvino_cache", exist_ok=True)
@@ -33,6 +33,18 @@ from pipeline import (
     flow1_read_input, flow2_detect_track, flow3_touch_logic,
     flow4_segment, flow5_longest_path, flow6_save_results,
 )
+
+
+def _force_put_sentinel(q: Queue) -> None:
+    while True:
+        try:
+            q.put_nowait(None)
+            return
+        except Full:
+            try:
+                q.get_nowait()
+            except Empty:
+                pass
 
 
 # Xóa output cũ
@@ -70,12 +82,10 @@ def _safe_thread(
         with error_lock:
             error_info.append((thread_name, exc, tb))
         error_event.set()
-        # Unblock tất cả luồng đang chờ queue
+        # Unblock tất cả luồng đang chờ queue.
+        # Nếu queue đang đầy, bỏ 1 item cũ để chắc chắn sentinel None được đẩy vào.
         for q in all_queues:
-            try:
-                q.put_nowait(None)
-            except Exception:
-                pass
+            _force_put_sentinel(q)
 
 
 # Main

@@ -10,9 +10,11 @@ import subprocess
 import sys
 import threading
 import time
+import unicodedata
 import zipfile
 from pathlib import Path
 from typing import Any
+import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape as xml_escape
 
 from flask import Flask, Response, jsonify, render_template, request, send_from_directory
@@ -43,6 +45,11 @@ CONFIG_KEYS = [
 INTERNAL_CONFIG_KEYS = ["MODEL_DET", "MODEL_SEG"]
 BOOL_CONFIG_KEYS = ["CLEAR_OUTPUT", "CLEAR_INPUT", "CHUNK_MODE", "CONVEYOR_VERTICAL", "SAVE"]
 RESULT_EXPORT_HEADERS = ["run", "source_file", "track_id", "frame_idx", "pixel_length", "real_length_mm", "size"]
+SCALE_IMPORT_MAX_BYTES = 8 * 1024 * 1024
+SCALE_MM_COLUMNS = {"mm", "real_mm", "real_length_mm", "length_mm", "ground_truth_mm", "actual_mm", "do_dai_mm"}
+SCALE_SOURCE_STEM_COLUMNS = {"source_stem", "stem", "ten_nguon", "nguon"}
+SCALE_SOURCE_FILE_COLUMNS = {"source_file", "file", "filename", "ten_file"}
+SCALE_TRACK_COLUMNS = {"track_id", "id", "shrimp_id", "tom_id"}
 
 
 mimetypes.add_type("text/css; charset=utf-8", ".css")
@@ -97,8 +104,6 @@ def _workspace_path(value: str) -> Path:
         resolved = path.resolve()
     else:
         resolved = (BASE_DIR / path).resolve()
-    if resolved != BASE_DIR and BASE_DIR not in resolved.parents:
-        raise ValueError("Đường dẫn phải nằm trong thư mục dự án")
     return resolved
 
 
@@ -121,11 +126,6 @@ def _output_dir() -> Path:
 
 def _log_path() -> Path:
     return _output_dir() / "pipeline.log"
-
-
-def _ensure_runtime_dirs() -> None:
-    _input_dir()
-    _output_dir()
 
 
 def _config_values(include_internal: bool = False) -> dict[str, Any]:
@@ -209,7 +209,7 @@ def _validate_config_payload(payload: dict[str, Any]) -> dict[str, Any]:
     for key in BOOL_CONFIG_KEYS:
         data[key] = _normalize_bool(data[key])
 
-    data["SCALE"] = _coerce_float(data, "SCALE", min_value=0.000001)
+    data["SCALE"] = _coerce_float(data, "SCALE", min_value=0.00001)
     data["CONF_DET"] = _coerce_float(data, "CONF_DET", min_value=0, max_value=1)
     data["CONF_SEG"] = _coerce_float(data, "CONF_SEG", min_value=0, max_value=1)
     data["BBOX_PAD"] = _coerce_int(data, "BBOX_PAD", min_value=0)
@@ -230,8 +230,15 @@ def _jsonable_sizes() -> dict[str, Any]:
 
 def _validate_sizes_payload(payload: dict[str, Any]) -> dict[str, Any]:
     raw_ranges = payload.get("ranges")
-    if not isinstance(raw_ranges, dict) or not raw_ranges:
-        raise ValueError("Bảng phân loại không được trống")
+    if not isinstance(raw_ranges, dict):
+        raise ValueError("Bảng phân loại phải là object")
+    if not raw_ranges:
+        return {
+            "ranges": {},
+            "undersize_label": str(payload.get("undersize_label", "")).strip() or "Ngoại cỡ nhỏ",
+            "oversize_label": str(payload.get("oversize_label", "")).strip() or "Ngoại cỡ lớn",
+            "fallback_label": str(payload.get("fallback_label", "")).strip() or "Ngoại cỡ",
+        }
 
     ranges: list[tuple[str, float, float]] = []
     labels = set()
@@ -423,7 +430,12 @@ def _normalize_images(images: dict[str, Any] | None) -> dict[str, Any]:
     normalized: dict[str, Any] = {}
     for key, value in images.items():
         if isinstance(value, list):
-            normalized[key] = [_image_url(item) for item in value if _image_url(item)]
+            urls = []
+            for item in value:
+                url = _image_url(item)
+                if url:
+                    urls.append(url)
+            normalized[key] = urls
         else:
             normalized[key] = _image_url(value)
     return normalized
@@ -557,6 +569,234 @@ def _xlsx_bytes(rows: list[list[Any]]) -> bytes:
     return buffer.getvalue()
 
 
+def _fold_column_name(value: Any) -> str:
+    text = unicodedata.normalize("NFKD", str(value or ""))
+    text = "".join(char for char in text if not unicodedata.combining(char))
+    text = re.sub(r"[^a-zA-Z0-9]+", "_", text).strip("_").lower()
+    return text
+
+
+def _parse_positive_mm(value: Any) -> float | None:
+    text = str(value or "").strip().replace(",", ".")
+    if not text:
+        return None
+    match = re.search(r"-?\d+(?:\.\d+)?", text)
+    if not match:
+        return None
+    number = float(match.group(0))
+    return number if number > 0 else None
+
+
+def _decode_csv_bytes(raw: bytes) -> str:
+    for encoding in ("utf-8-sig", "utf-8", "cp1258", "latin-1"):
+        try:
+            return raw.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return raw.decode("utf-8", errors="replace")
+
+
+def _parse_csv_table(raw: bytes) -> list[list[str]]:
+    text = _decode_csv_bytes(raw)
+    sample = text[:4096]
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=",;\t")
+    except csv.Error:
+        dialect = csv.excel
+    return [[cell.strip() for cell in row] for row in csv.reader(io.StringIO(text), dialect)]
+
+
+def _xlsx_shared_strings(archive: zipfile.ZipFile) -> list[str]:
+    try:
+        raw_xml = archive.read("xl/sharedStrings.xml")
+    except KeyError:
+        return []
+    root = ET.fromstring(raw_xml)
+    strings = []
+    for item in root.iter():
+        if item.tag.endswith("}si") or item.tag == "si":
+            strings.append("".join(node.text or "" for node in item.iter() if node.tag.endswith("}t") or node.tag == "t"))
+    return strings
+
+
+def _xlsx_column_index(cell_ref: str) -> int:
+    letters = re.match(r"[A-Z]+", cell_ref.upper())
+    if not letters:
+        return 0
+    index = 0
+    for char in letters.group(0):
+        index = index * 26 + ord(char) - ord("A") + 1
+    return index - 1
+
+
+def _xlsx_cell_text(cell: ET.Element, shared_strings: list[str]) -> str:
+    cell_type = cell.attrib.get("t")
+    if cell_type == "inlineStr":
+        return "".join(node.text or "" for node in cell.iter() if node.tag.endswith("}t") or node.tag == "t")
+
+    value_node = None
+    for node in cell:
+        if node.tag.endswith("}v") or node.tag == "v":
+            value_node = node
+            break
+    raw_value = value_node.text if value_node is not None else ""
+    if cell_type == "s":
+        try:
+            return shared_strings[int(raw_value)]
+        except (ValueError, IndexError):
+            return ""
+    return str(raw_value or "")
+
+
+def _parse_xlsx_table(raw: bytes) -> list[list[str]]:
+    with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+        try:
+            sheet_xml = archive.read("xl/worksheets/sheet1.xml")
+        except KeyError as exc:
+            raise ValueError("Không tìm thấy sheet đầu tiên trong file XLSX") from exc
+
+        shared_strings = _xlsx_shared_strings(archive)
+        root = ET.fromstring(sheet_xml)
+        rows = []
+        for row in root.iter():
+            if not (row.tag.endswith("}row") or row.tag == "row"):
+                continue
+            cells: dict[int, str] = {}
+            max_index = -1
+            for cell in row:
+                if not (cell.tag.endswith("}c") or cell.tag == "c"):
+                    continue
+                col_index = _xlsx_column_index(cell.attrib.get("r", ""))
+                cells[col_index] = _xlsx_cell_text(cell, shared_strings).strip()
+                max_index = max(max_index, col_index)
+            if max_index >= 0:
+                rows.append([cells.get(index, "") for index in range(max_index + 1)])
+        return rows
+
+
+def _scale_import_table(raw: bytes, filename: str) -> list[list[str]]:
+    suffix = Path(filename).suffix.lower()
+    if suffix == ".csv":
+        return _parse_csv_table(raw)
+    if suffix == ".xlsx":
+        return _parse_xlsx_table(raw)
+    raise ValueError("Chỉ hỗ trợ file CSV hoặc XLSX")
+
+
+def _header_index(header: list[str], aliases: set[str]) -> int | None:
+    folded = [_fold_column_name(cell) for cell in header]
+    for index, name in enumerate(folded):
+        if name in aliases:
+            return index
+    return None
+
+
+def _normalize_track_id(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    try:
+        number = float(text.replace(",", "."))
+    except ValueError:
+        return text
+    return str(int(number)) if number.is_integer() else text
+
+
+def _scale_import_records(table: list[list[str]]) -> list[dict[str, Any]]:
+    rows = [row for row in table if any(str(cell).strip() for cell in row)]
+    if not rows:
+        return []
+
+    header = rows[0]
+    mm_col = _header_index(header, SCALE_MM_COLUMNS)
+    source_stem_col = _header_index(header, SCALE_SOURCE_STEM_COLUMNS)
+    source_file_col = _header_index(header, SCALE_SOURCE_FILE_COLUMNS)
+    track_col = _header_index(header, SCALE_TRACK_COLUMNS)
+    has_header = mm_col is not None
+
+    if not has_header:
+        records = []
+        for row in rows:
+            mm = _parse_positive_mm(row[0] if row else "")
+            if mm is not None:
+                records.append({"real_length_mm": mm})
+        return records
+
+    records = []
+    for row in rows[1:]:
+        mm = _parse_positive_mm(row[mm_col] if mm_col < len(row) else "")
+        if mm is None:
+            continue
+        record: dict[str, Any] = {"real_length_mm": mm}
+        if source_stem_col is not None and source_stem_col < len(row):
+            record["source_stem"] = str(row[source_stem_col]).strip()
+        if source_file_col is not None and source_file_col < len(row):
+            record["source_file"] = str(row[source_file_col]).strip()
+        if track_col is not None and track_col < len(row):
+            record["track_id"] = _normalize_track_id(row[track_col])
+        records.append(record)
+    return records
+
+
+def _scale_import_measurements(
+    records: list[dict[str, Any]],
+    ordered_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[str]]:
+    warnings = []
+    measurements_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+    ordered_by_key = {
+        (str(row.get("source_stem") or "").strip(), str(row.get("track_id") or "").strip()): row
+        for row in ordered_rows
+    }
+
+    sequential_records = []
+    for record in records:
+        source_stem = str(record.get("source_stem") or "").strip()
+        source_file = str(record.get("source_file") or "").strip()
+        track_id = str(record.get("track_id") or "").strip()
+
+        if not source_stem and source_file:
+            source_stem = Path(source_file).stem
+
+        if source_stem and track_id:
+            key = (source_stem, track_id)
+            if key in ordered_by_key:
+                source_row = ordered_by_key[key]
+                measurements_by_key[key] = {
+                    "source_file": source_row.get("source_file", source_file),
+                    "source_stem": source_stem,
+                    "track_id": track_id,
+                    "real_length_mm": record["real_length_mm"],
+                }
+            else:
+                warnings.append(f"Bỏ qua {source_stem} ID {track_id}: không có trong kết quả hiện tại")
+        else:
+            sequential_records.append(record)
+
+    if sequential_records:
+        available_rows = [
+            row for row in ordered_rows
+            if (str(row.get("source_stem") or "").strip(), str(row.get("track_id") or "").strip()) not in measurements_by_key
+        ]
+        for row, record in zip(available_rows, sequential_records):
+            key = (str(row.get("source_stem") or "").strip(), str(row.get("track_id") or "").strip())
+            measurements_by_key[key] = {
+                "source_file": row.get("source_file", ""),
+                "source_stem": key[0],
+                "track_id": key[1],
+                "real_length_mm": record["real_length_mm"],
+            }
+        if len(sequential_records) > len(available_rows):
+            warnings.append(f"Bỏ qua {len(sequential_records) - len(available_rows)} dòng mm vì nhiều hơn số dòng kết quả")
+
+    measurements = [
+        measurements_by_key[(str(row.get("source_stem") or "").strip(), str(row.get("track_id") or "").strip())]
+        for row in ordered_rows
+        if (str(row.get("source_stem") or "").strip(), str(row.get("track_id") or "").strip()) in measurements_by_key
+    ]
+    return measurements, warnings
+
+
 def _find_run_dir(run_name: str | None) -> Path | None:
     for run_dir in _run_dirs():
         if run_name is None or run_dir.name == run_name:
@@ -611,11 +851,6 @@ def _least_squares_mm_per_px(samples: list[dict[str, Any]]) -> tuple[float, floa
 
 @app.get("/")
 def index():
-    return render_template("index.html")
-
-
-@app.get("/ui")
-def ui():
     return render_template("index.html")
 
 
@@ -809,6 +1044,55 @@ def pick_config_path():
     return jsonify({"path": _relative_workspace_path(selected), "cancelled": False})
 
 
+@app.post("/api/calibrate/import-measurements")
+def import_scale_measurements():
+    file = request.files.get("file")
+    if file is None or not file.filename:
+        return jsonify({"error": "Chưa chọn file scale"}), 400
+
+    run_name = str(request.form.get("run") or "").strip()
+    if not run_name:
+        return jsonify({"error": "Chưa chọn run để nạp file scale"}), 400
+    if _find_run_dir(run_name) is None:
+        return jsonify({"error": f"Không tìm thấy run {run_name}"}), 404
+
+    try:
+        ordered_rows = json.loads(request.form.get("rows") or "[]")
+    except json.JSONDecodeError as exc:
+        return jsonify({"error": f"Danh sách dòng kết quả không hợp lệ: {exc}"}), 400
+    if not isinstance(ordered_rows, list) or not ordered_rows:
+        return jsonify({"error": "Chưa có dòng kết quả để ghép file scale"}), 400
+    ordered_rows = [row for row in ordered_rows if isinstance(row, dict)]
+    if not ordered_rows:
+        return jsonify({"error": "Danh sách dòng kết quả không hợp lệ"}), 400
+
+    raw = file.read(SCALE_IMPORT_MAX_BYTES + 1)
+    if len(raw) > SCALE_IMPORT_MAX_BYTES:
+        return jsonify({"error": "File scale vượt quá giới hạn 8 MB"}), 400
+
+    try:
+        table = _scale_import_table(raw, file.filename)
+        records = _scale_import_records(table)
+    except (OSError, UnicodeError, zipfile.BadZipFile, ET.ParseError, ValueError) as exc:
+        return jsonify({"error": f"Không đọc được file scale: {exc}"}), 400
+
+    if not records:
+        return jsonify({"error": "Không tìm thấy cột/dòng mm hợp lệ trong file scale"}), 400
+
+    measurements, warnings = _scale_import_measurements(records, ordered_rows)
+    if not measurements:
+        return jsonify({"error": "Không ghép được dòng mm nào với kết quả hiện tại", "warnings": warnings}), 400
+
+    return jsonify(
+        {
+            "measurements": measurements,
+            "count": len(measurements),
+            "expected_count": len(ordered_rows),
+            "warnings": warnings,
+        }
+    )
+
+
 @app.post("/api/calibrate")
 def calibrate_scale():
     payload = request.get_json(force=True, silent=True) or {}
@@ -968,7 +1252,6 @@ def output_file(filename: str):
 
 
 if __name__ == "__main__":
-    _ensure_runtime_dirs()
     host = os.environ.get("HOST", "127.0.0.1")
     port = int(os.environ.get("PORT", "3000"))
     debug = os.environ.get("FLASK_DEBUG", "1").strip().lower() in {"1", "true", "yes", "on"}

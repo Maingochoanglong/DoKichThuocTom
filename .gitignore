@@ -11,5 +11,4 @@ test1/
 scale/
 cong/
 chunk_test/
-compare_outputs.py
-extract_largest_shrimp.py
+tool/*
