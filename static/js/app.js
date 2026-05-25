@@ -473,6 +473,18 @@ async function pollLog() {
   appendLog(payload.content);
 }
 
+// Cập nhật accept attribute cho input file/folder dựa trên IMG_EXTS và VID_EXTS từ config.
+function updateFileInputAccept(config) {
+  const imgExts = Array.isArray(config.IMG_EXTS) ? config.IMG_EXTS : [];
+  const vidExts = Array.isArray(config.VID_EXTS) ? config.VID_EXTS : [];
+  const accept  = [...imgExts, ...vidExts].join(",");
+  if (!accept) return;
+  const fileInput   = $("fileInput");
+  const folderInput = $("folderInput");
+  if (fileInput)   fileInput.accept   = accept;
+  if (folderInput) folderInput.accept = accept;
+}
+
 function applyConfig(config) {
   state.config = config;
   Object.entries(state.config).forEach(([key, value]) => {
@@ -488,6 +500,7 @@ function applyConfig(config) {
   });
   updateConfidenceLabels();
   $("scaleChip").textContent = `SCALE: ${Number(state.config.SCALE).toFixed(4)} mm/px`;
+  updateFileInputAccept(config);
 }
 
 async function loadConfig() {
@@ -1101,6 +1114,7 @@ function collectScaleMeasurements() {
     .filter((item) => Number.isFinite(item.real_length_mm) && item.real_length_mm > 0);
 }
 
+// Lấy danh sách tôm trang hiện tại theo đúng thứ tự hiển thị để ghép với file import.
 function currentScaleOrderRows() {
   const filter = $("sizeFilter").value;
   const rows = [];
