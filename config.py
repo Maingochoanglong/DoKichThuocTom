@@ -50,9 +50,13 @@ COLOR = [
 QUEUE_SIZE = 0
 
 # Thư mục chứa ảnh/video đầu vào. Upload từ giao diện web sẽ lưu vào đây.
+# Đường dẫn tương đối được tính từ thư mục gốc dự án (BASE_DIR).
+# Ví dụ: "input" -> BASE_DIR/input | "C:\Data\tom" -> dùng thẳng đường dẫn đó.
 INPUT_DIR = str(load_setting("INPUT_DIR", "input", section="config"))
 
 # Thư mục chứa kết quả chạy pipeline: pipeline.log, JSON kết quả, ảnh debug và thư mục run.
+# Đường dẫn tương đối được tính từ thư mục gốc dự án (BASE_DIR).
+# Ví dụ: "output" -> BASE_DIR/output | "D:\Results\tom" -> dùng thẳng đường dẫn đó.
 OUTPUT_DIR = str(load_setting("OUTPUT_DIR", "output", section="config"))
 
 # True: xóa toàn bộ dữ liệu cũ trong OUTPUT_DIR trước mỗi lần chạy pipeline.
