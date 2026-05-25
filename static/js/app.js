@@ -33,6 +33,14 @@ const $ = (id) => document.getElementById(id);
 
 const JSON_HEADERS = {"Content-Type": "application/json"};
 const RUNNING_LOCKED_TABS = new Set(["configTab", "sizesTab"]);
+const pathHelpRefs = {
+  inputDirEl: null,
+  inputDirHelp: null,
+  inputDirBaseHelp: "",
+  outputDirEl: null,
+  outputDirHelp: null,
+  outputDirBaseHelp: "",
+};
 
 const heroIcon = (paths, width = "1.5") => (
   `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${width}" aria-hidden="true">` +
@@ -348,6 +356,32 @@ function isConfidenceKey(key) {
   return key === "CONF_DET" || key === "CONF_SEG";
 }
 
+function isAbsolutePath(value) {
+  if (!value) return false;
+  if (/^[A-Za-z]:[/\\]/.test(value)) return true;
+  if (value.startsWith("/")) return true;
+  return false;
+}
+
+function updatePathHelp(inputEl, helpEl, baseHelpText) {
+  if (!inputEl || !helpEl) return;
+  const value = inputEl.value.trim();
+  if (!value) {
+    helpEl.textContent = baseHelpText;
+    return;
+  }
+  if (isAbsolutePath(value)) {
+    helpEl.textContent = `Đường dẫn tuyệt đối: Flask sẽ đọc hoặc ghi trực tiếp tại ${value}`;
+  } else {
+    helpEl.textContent = `Đường dẫn tương đối: Flask sẽ tính từ BASE_DIR của ứng dụng với giá trị ${value}`;
+  }
+}
+
+function refreshPathHelp() {
+  updatePathHelp(pathHelpRefs.inputDirEl, pathHelpRefs.inputDirHelp, pathHelpRefs.inputDirBaseHelp);
+  updatePathHelp(pathHelpRefs.outputDirEl, pathHelpRefs.outputDirHelp, pathHelpRefs.outputDirBaseHelp);
+}
+
 function setRunning(running) {
   state.running = running;
   document.body.classList.toggle("is-running", running);
@@ -473,21 +507,6 @@ async function pollLog() {
   appendLog(payload.content);
 }
 
-function showSettingsErrors(payload) {
-  const errors = Array.isArray(payload?._settings_errors) ? payload._settings_errors : [];
-  if (!errors.length) return;
-  toast(errors.join(" | "), "warning", {
-    title: "Lỗi đọc settings.json",
-    duration: 7000,
-  });
-}
-
-function readSettingsPayload(payload) {
-  showSettingsErrors(payload);
-  const {_settings_errors, ...data} = payload;
-  return data;
-}
-
 function applyConfig(config) {
   state.config = config;
   Object.entries(state.config).forEach(([key, value]) => {
@@ -503,10 +522,11 @@ function applyConfig(config) {
   });
   updateConfidenceLabels();
   $("scaleChip").textContent = `SCALE: ${Number(state.config.SCALE).toFixed(4)} mm/px`;
+  refreshPathHelp();
 }
 
 async function loadConfig() {
-  applyConfig(readSettingsPayload(await requestJson("/api/config")));
+  applyConfig(await requestJson("/api/config"));
 }
 
 function collectConfig() {
@@ -527,7 +547,7 @@ function collectConfig() {
 }
 
 async function saveCurrentConfig() {
-  applyConfig(readSettingsPayload(await sendJson("/api/config", "PUT", collectConfig())));
+  applyConfig(await sendJson("/api/config", "PUT", collectConfig()));
   await loadInputFiles();
 }
 
@@ -543,36 +563,6 @@ async function saveConfig(event) {
   }
 }
 
-async function pickConfigPath(button) {
-  const key = button.dataset.configKey;
-  const mode = button.dataset.pickMode;
-  if (!key || !mode || state.running) return;
-
-  button.disabled = true;
-  button.setAttribute("aria-busy", "true");
-  try {
-    const result = await sendJson("/api/config/pick-path", "POST", {key, mode});
-    if (result.cancelled || !result.path) return;
-
-    const input = $(`cfg_${key}`);
-    if (input) {
-      input.value = result.path;
-      input.focus();
-    }
-    if (key === "INPUT_DIR") {
-      await saveCurrentConfig();
-      toast("Đã chọn INPUT_DIR và cập nhật danh sách file input", "success");
-      return;
-    }
-    toast(`Đã chọn ${key}`, "success");
-  } catch (error) {
-    toast(error.message, "error");
-  } finally {
-    button.removeAttribute("aria-busy");
-    button.disabled = state.running;
-  }
-}
-
 function applySizes(sizes) {
   state.sizes = sizes;
   $("size_undersize").value = state.sizes.undersize_label;
@@ -582,7 +572,7 @@ function applySizes(sizes) {
 }
 
 async function loadSizes() {
-  applySizes(readSettingsPayload(await requestJson("/api/config/sizes")));
+  applySizes(await requestJson("/api/config/sizes"));
 }
 
 function renderSizeRows() {
@@ -660,7 +650,7 @@ async function saveSizes(event) {
   event.preventDefault();
   const submitter = event.submitter || event.currentTarget.querySelector("[type='submit']");
   try {
-    applySizes(readSettingsPayload(await sendJson("/api/config/sizes", "PUT", collectSizes())));
+    applySizes(await sendJson("/api/config/sizes", "PUT", collectSizes()));
     flashSaved(submitter, "Đã lưu phân loại");
     toast("Bảng phân loại kích cỡ đã được lưu chính thức vào settings.json", "success", {title: "Đã lưu phân loại"});
   } catch (error) {
@@ -765,14 +755,12 @@ async function loadInputFiles() {
 function renderInputFiles() {
   const list = $("fileList");
   const pager = $("inputPager");
-  const pagerTop = $("inputPagerTop");
   const total = state.inputFiles.length;
   const pageSize = Number(state.inputPageSize) || 5;
   list.innerHTML = "";
 
   if (!total) {
     list.innerHTML = `<div class="empty-state compact">Input đang trống</div>`;
-    if (pagerTop) pagerTop.hidden = false;
     if (pager) pager.hidden = true;
     $("inputPageInfo").textContent = "0 file";
     renderPageNumbers("inputPageButtons", 1, 1, () => {});
@@ -797,7 +785,6 @@ function renderInputFiles() {
     list.appendChild(row);
   });
 
-  if (pagerTop) pagerTop.hidden = false;
   if (pager) pager.hidden = false;
   $("inputPageInfo").textContent = `${total} file · Trang ${windowInfo.currentPage}/${windowInfo.totalPages}`;
   $("inputPrevPage").disabled = windowInfo.currentPage <= 1;
@@ -1223,9 +1210,7 @@ async function applyScale() {
     state.scaleMeasurements.clear();
     updateScaleControls();
     await loadConfig();
-    if (state.currentResults) {
-      renderResults(state.currentResults);
-    }
+    await loadResults();
     flashSaved($("applyScaleBtn"), "Đã lưu scale");
     toast(`SCALE = ${Number(result.scale).toFixed(6)} mm/px theo y = SCALE x pixel từ ${result.count} mẫu`, "success", {title: "Đã lưu scale"});
   } catch (error) {
@@ -1397,8 +1382,25 @@ function bindModalEvents() {
   });
 }
 
+function bindPathHelpEvents() {
+  pathHelpRefs.inputDirEl = $("cfg_INPUT_DIR");
+  pathHelpRefs.outputDirEl = $("cfg_OUTPUT_DIR");
+  pathHelpRefs.inputDirHelp = pathHelpRefs.inputDirEl?.closest(".min-w-0")?.querySelector(".form-help") || null;
+  pathHelpRefs.outputDirHelp = pathHelpRefs.outputDirEl?.closest(".min-w-0")?.querySelector(".form-help") || null;
+  pathHelpRefs.inputDirBaseHelp = pathHelpRefs.inputDirHelp?.textContent || "";
+  pathHelpRefs.outputDirBaseHelp = pathHelpRefs.outputDirHelp?.textContent || "";
+
+  pathHelpRefs.inputDirEl?.addEventListener("input", () => {
+    updatePathHelp(pathHelpRefs.inputDirEl, pathHelpRefs.inputDirHelp, pathHelpRefs.inputDirBaseHelp);
+  });
+  pathHelpRefs.outputDirEl?.addEventListener("input", () => {
+    updatePathHelp(pathHelpRefs.outputDirEl, pathHelpRefs.outputDirHelp, pathHelpRefs.outputDirBaseHelp);
+  });
+}
+
 function bindEvents() {
   bindModalEvents();
+  bindPathHelpEvents();
   applyPagerIcons();
   syncPageButtonCountSelects();
   document.querySelectorAll("[data-tab-target]").forEach((button) => {
@@ -1426,10 +1428,6 @@ function bindEvents() {
     });
   }
   $("configForm").addEventListener("submit", saveConfig);
-  $("configForm").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-pick-path]");
-    if (button) pickConfigPath(button);
-  });
   $("sizeForm").addEventListener("submit", saveSizes);
   $("addSizeRow").addEventListener("click", addSizeRow);
   $("sizeRows").addEventListener("click", (event) => {
