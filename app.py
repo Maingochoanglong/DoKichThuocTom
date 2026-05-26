@@ -30,6 +30,8 @@ from xml.sax.saxutils import escape as xml_escape
 
 from flask import Flask, Response, jsonify, render_template, request, send_from_directory
 
+from defaults import DEFAULT_CONFIG, DEFAULT_SIZES
+
 
 BASE_DIR      = Path(__file__).resolve().parent
 SETTINGS_PATH = BASE_DIR / "settings.json"
@@ -53,34 +55,7 @@ logging.getLogger("werkzeug").addFilter(
 )
 
 
-# Giá trị mặc định
-# Phải khớp với defaults trong config.py và size.py của backend.
-# Dùng khi settings.json chưa có key tương ứng.
 
-_D_CONFIG: dict[str, Any] = {
-    "INPUT_DIR":         "input",
-    "OUTPUT_DIR":        "output",
-    "CLEAR_OUTPUT":      False,
-    "CLEAR_INPUT":       False,
-    "CHUNK_MODE":        False,
-    "SCALE":             1.0,
-    "CONF_DET":          0.5,
-    "CONF_SEG":          0.5,
-    "BBOX_PAD":          5,
-    "TOUCH_THRESHOLD":   10.0,
-    "TARGET_FPS":        0.0,
-    "CONVEYOR_VERTICAL": False,
-    "SAVE":              True,
-    "IMG_EXTS": [".bmp", ".heic", ".jpeg", ".jpg", ".png", ".tif", ".tiff", ".webp"],
-    "VID_EXTS": [".avi", ".flv", ".m4v", ".mkv", ".mov", ".mp4", ".webm", ".wmv"],
-}
-
-_D_SIZES: dict[str, Any] = {
-    "SIZE_RANGES":     {},
-    "UNDERSIZE_LABEL": "Ngoại cỡ nhỏ",
-    "OVERSIZE_LABEL":  "Ngoại cỡ lớn",
-    "FALLBACK_LABEL":  "Ngoại cỡ",
-}
 
 # Các key cho phép chỉnh qua giao diện web.
 CONFIG_KEYS = [
@@ -119,13 +94,23 @@ def _write_section(section: str, values: dict) -> None:
 
 # Đọc config và kích cỡ 
 
+def _ensure_defaults() -> None:
+    """
+    Ghi giá trị mặc định vào settings.json nếu file chưa tồn tại.
+    Chỉ chạy lần đầu khởi động hoặc khi file bị xóa.
+    """
+    if not SETTINGS_PATH.exists():
+        _write_section("config", DEFAULT_CONFIG)
+        _write_section("size", DEFAULT_SIZES)
+
+
 def _get_config() -> dict:
     """
     Đọc config từ settings.json.
     Mỗi lần gọi đọc lại file để luôn nhận giá trị mới nhất.
     """
     sec = _read_settings().get("config", {})
-    return {k: sec.get(k, _D_CONFIG[k]) for k in _D_CONFIG}
+    return {k: sec.get(k, DEFAULT_CONFIG[k]) for k in DEFAULT_CONFIG}
 
 
 def _save_config(values: dict) -> None:
@@ -145,11 +130,11 @@ def _get_sizes() -> dict:
     return {
         "ranges": {
             k: list(v)
-            for k, v in sec.get("SIZE_RANGES", _D_SIZES["SIZE_RANGES"]).items()
+            for k, v in sec.get("SIZE_RANGES", DEFAULT_SIZES["SIZE_RANGES"]).items()
         },
-        "undersize_label": sec.get("UNDERSIZE_LABEL", _D_SIZES["UNDERSIZE_LABEL"]),
-        "oversize_label":  sec.get("OVERSIZE_LABEL",  _D_SIZES["OVERSIZE_LABEL"]),
-        "fallback_label":  sec.get("FALLBACK_LABEL",  _D_SIZES["FALLBACK_LABEL"]),
+        "undersize_label": sec.get("UNDERSIZE_LABEL", DEFAULT_SIZES["UNDERSIZE_LABEL"]),
+        "oversize_label":  sec.get("OVERSIZE_LABEL",  DEFAULT_SIZES["OVERSIZE_LABEL"]),
+        "fallback_label":  sec.get("FALLBACK_LABEL",  DEFAULT_SIZES["FALLBACK_LABEL"]),
     }
 
 
@@ -719,7 +704,7 @@ def put_sizes():
     return jsonify(_get_sizes())
 
 
-# -- Kết quả -----------------------------------------------------------------
+# Kết quả 
 
 @app.get("/api/results/runs")
 def result_runs():
@@ -932,6 +917,7 @@ def output_file(filename: str):
 # == Khởi động 
 
 if __name__ == "__main__":
+    _ensure_defaults()
     host  = os.environ.get("HOST",         "127.0.0.1")
     port  = int(os.environ.get("PORT",     "3000"))
     debug = os.environ.get("FLASK_DEBUG", "1").strip().lower() in {"1", "true", "yes", "on"}

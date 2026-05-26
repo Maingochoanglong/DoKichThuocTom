@@ -23,7 +23,7 @@ from skimage.morphology import medial_axis
 from config import (
     BBOX_PAD, CHUNK_MODE, CLEAR_INPUT, CONF_DET, CONF_SEG, DEVICE, CONVEYOR_VERTICAL,
     IMG_EXTS, INPUT_DIR,
-    REQUIRED_TOUCHES, SAVE, SCALE, TARGET_FPS, TOUCH_THRESHOLD, VID_EXTS,
+    SAVE, SCALE, TARGET_FPS, TOUCH_THRESHOLD, VID_EXTS,
 )
 from draw_utils import draw_f6_result, save_f3_debug, save_f4_debug, save_f5_debug
 from flow_utils import box_touches_line, get_lines, get_masked_image
@@ -175,7 +175,7 @@ def flow2_detect_track(model_det, q_f1_f2, q_f2_f3, flow_times: dict) -> None:
 def flow3_touch_logic(q_f2_f3, q_f3_f4, flow_times: dict) -> None:
     """
     - Ảnh tĩnh: chuyển thẳng sang F4 không qua kiểm tra vạch.
-    - Video: xác nhận tôm chạm đủ REQUIRED_TOUCHES vạch rồi mới gửi F4.
+    - Video: xác nhận tôm chạm đủ 3 vạch rồi mới gửi F4.
     """
     log              = get_logger()
     start_time       = time.perf_counter()
@@ -306,7 +306,7 @@ def flow3_touch_logic(q_f2_f3, q_f3_f4, flow_times: dict) -> None:
                     track_data["best_frame_idx"]  = frame_idx
                     track_data["best_area"]       = area
 
-            if len(track_data["lines_touched"]) == REQUIRED_TOUCHES:
+            if len(track_data["lines_touched"]) == 3:
                 flush_track_to_f4(track_id, track_data, video_path.stem, video_path.name, lines, item["run_dir"])
                 completed_tracks.add(track_id)
                 del active_tracks[track_id]

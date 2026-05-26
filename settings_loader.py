@@ -32,7 +32,7 @@ _SETTINGS_ERRORS: dict[str, str] = {}
 _MISSING = object()
 
 
-# ---- API công khai ----
+# API công khai 
 def load_setting(key: str, default: Any, section: str = "config") -> Any:
     """
     Đọc một giá trị từ settings.json.
@@ -118,7 +118,7 @@ def save_settings(section: str, values: dict[str, Any]) -> None:
     _SETTINGS_ERRORS.clear()
 
 
-# ---- Hàm nội bộ ----
+# Hàm nội bộ 
 def _write_default(key: str, default: Any, section: str) -> None:
     """
     Ghi giá trị mặc định của key vào settings.json dưới section chỉ định.
