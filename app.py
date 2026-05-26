@@ -48,15 +48,6 @@ app = Flask(
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024 * 1024
 app.json.ensure_ascii = False
 
-logging.getLogger("werkzeug").addFilter(
-    type("_F", (logging.Filter,), {
-        "filter": lambda self, r: "/api/pipeline/status" not in r.getMessage()
-    })()
-)
-
-
-
-
 # Các key cho phép chỉnh qua giao diện web.
 CONFIG_KEYS = [
     "INPUT_DIR", "OUTPUT_DIR", "CLEAR_OUTPUT", "CLEAR_INPUT", "CHUNK_MODE",
@@ -69,7 +60,7 @@ RESULT_COLS    = ["run", "source_file", "track_id", "frame_idx", "pixel_length",
 MAX_SCALE_BYTE = 4 * 1024 * 1024   # 4 MB giới hạn file scale import
 
 
-# == Đọc/ghi settings.json trực tiếp (không qua settings_loader) =
+#  Đọc/ghi settings.json trực tiếp (không qua settings_loader)
 
 def _read_settings() -> dict:
     """Đọc toàn bộ settings.json, trả về dict rỗng nếu lỗi."""
@@ -551,19 +542,15 @@ def _read_col_xlsx(raw: bytes) -> list[float]:
     return values
 
 
-# == Routes 
+# Routes 
 
 @app.get("/")
 def index():
     return render_template("index.html")
 
 
-@app.get("/api/health")
-def health():
-    return jsonify({"ok": True, "status": _status()})
 
-
-# -- File input --------------------------------------------------------------
+# File input 
 
 @app.get("/api/files/input")
 def list_input():
