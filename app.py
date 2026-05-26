@@ -60,7 +60,7 @@ RESULT_COLS    = ["run", "source_file", "track_id", "frame_idx", "pixel_length",
 MAX_SCALE_BYTE = 4 * 1024 * 1024   # 4 MB giới hạn file scale import
 
 
-#  Đọc/ghi settings.json trực tiếp (không qua settings_loader)
+#  Đọc/ghi settings.json trực tiếp
 
 def _read_settings() -> dict:
     """Đọc toàn bộ settings.json, trả về dict rỗng nếu lỗi."""
@@ -592,7 +592,7 @@ def delete_input(filename: str):
     return jsonify({"ok": True})
 
 
-# -- Pipeline ----------------------------------------------------------------
+# Pipeline
 
 @app.post("/api/pipeline/run")
 def run_pipeline():
@@ -652,7 +652,7 @@ def pipeline_log():
     })
 
 
-# -- Cấu hình ----------------------------------------------------------------
+# Cấu hình
 
 @app.get("/api/config")
 def get_config():
@@ -669,7 +669,7 @@ def put_config():
     return jsonify(_get_config())
 
 
-# -- Kích cỡ -----------------------------------------------------------------
+# Kích cỡ 
 
 @app.get("/api/config/sizes")
 def get_sizes():
@@ -740,7 +740,7 @@ def export_excel():
     )
 
 
-# -- Hiệu chuẩn scale --------------------------------------------------------
+# Hiệu chuẩn scale 
 
 @app.post("/api/calibrate/import-measurements")
 def import_measurements():
@@ -888,7 +888,7 @@ def calibrate():
     })
 
 
-# -- Phục vụ ảnh debug -------------------------------------------------------
+# Phục vụ ảnh debug 
 
 @app.get("/outputs/<path:filename>")
 def output_file(filename: str):

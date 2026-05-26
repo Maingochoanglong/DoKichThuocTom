@@ -132,7 +132,6 @@ def _write_default(key: str, default: Any, section: str) -> None:
     try:
         settings = _read_settings() if SETTINGS_PATH.exists() else {}
     except (OSError, json.JSONDecodeError, TypeError, ValueError):
-        # File hỏng: không ghi đè, người dùng tự sửa.
         return
 
     sec = settings.setdefault(section, {})
@@ -152,7 +151,6 @@ def _write_default(key: str, default: Any, section: str) -> None:
             encoding="utf-8",
         )
     except OSError:
-        # Lỗi ghi: câm lặng, caller vẫn nhận được default.
         pass
 
 
