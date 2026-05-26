@@ -2,19 +2,13 @@
 app.py
 
 Giao diện web Flask cho hệ thống đo tôm.
-
-Frontend và backend HOÀN TOÀN ĐỘC LẬP. Mọi giao tiếp chỉ qua:
-    settings.json  - frontend đọc/ghi config, backend đọc khi chạy.
-    output/        - backend ghi kết quả và log, frontend đọc để hiển thị.
-    subprocess     - frontend kích hoạt backend, không import bất kỳ module nào của backend.
-
-app.py không import: main, pipeline, config, size, settings_loader, flow_utils, ...
+app.py dùng chung settings_loader, config và size với pipeline vì các module
+này đều nằm cùng cấp thư mục dự án.
 """
 
 import csv
 import io
 import json
-import logging
 import mimetypes
 import os
 import re
@@ -22,19 +16,18 @@ import subprocess
 import sys
 import threading
 import time
-import zipfile
 from pathlib import Path
 from typing import Any
-import xml.etree.ElementTree as ET
-from xml.sax.saxutils import escape as xml_escape
 
 from flask import Flask, Response, jsonify, render_template, request, send_from_directory
+from openpyxl import Workbook, load_workbook
 
-from defaults import DEFAULT_CONFIG, DEFAULT_SIZES
+from config import load_config_values
+from settings_loader import pull_setting_warnings, read_setting, save_setting
+from size import load_size_values
 
 
-BASE_DIR      = Path(__file__).resolve().parent
-SETTINGS_PATH = BASE_DIR / "settings.json"
+BASE_DIR = Path(__file__).resolve().parent
 
 mimetypes.add_type("text/css; charset=utf-8", ".css")
 mimetypes.add_type("application/javascript; charset=utf-8", ".js")
@@ -60,72 +53,31 @@ RESULT_COLS    = ["run", "source_file", "track_id", "frame_idx", "pixel_length",
 MAX_SCALE_BYTE = 4 * 1024 * 1024   # 4 MB giới hạn file scale import
 
 
-#  Đọc/ghi settings.json trực tiếp
-
-def _read_settings() -> dict:
-    """Đọc toàn bộ settings.json, trả về dict rỗng nếu lỗi."""
-    try:
-        return json.loads(SETTINGS_PATH.read_text(encoding="utf-8-sig"))
-    except Exception:
-        return {}
-
-
-def _write_section(section: str, values: dict) -> None:
-    """
-    Ghi đè một section trong settings.json.
-    Các section khác và các key lạ trong cùng section được giữ nguyên.
-    """
-    data = _read_settings()
-    data[section] = values
-    SETTINGS_PATH.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-
-
-# Đọc config và kích cỡ 
-
-def _ensure_defaults() -> None:
-    """
-    Ghi giá trị mặc định vào settings.json nếu file chưa tồn tại.
-    Chỉ chạy lần đầu khởi động hoặc khi file bị xóa.
-    """
-    if not SETTINGS_PATH.exists():
-        _write_section("config", DEFAULT_CONFIG)
-        _write_section("size", DEFAULT_SIZES)
-
-
 def _get_config() -> dict:
-    """
-    Đọc config từ settings.json.
-    Mỗi lần gọi đọc lại file để luôn nhận giá trị mới nhất.
-    """
-    sec = _read_settings().get("config", {})
-    return {k: sec.get(k, DEFAULT_CONFIG[k]) for k in DEFAULT_CONFIG}
+    """Lấy config qua config.load_config_values(), nơi đọc settings bằng settings_loader."""
+    return load_config_values()
 
 
 def _save_config(values: dict) -> None:
     """
-    Lưu config vào settings.json.
-    Đọc section hiện tại trước để bảo toàn IMG_EXTS, VID_EXTS và bất kỳ
-    key nào người dùng đã thêm tay mà không thuộc CONFIG_KEYS.
+    Lưu config qua settings_loader.
+    Giữ IMG_EXTS, VID_EXTS và key người dùng thêm tay trong section config.
     """
-    current = _read_settings().get("config", {})
+    current = read_setting().get("config", {})
+    if not isinstance(current, dict):
+        current = {}
     merged  = {**current, **{k: values[k] for k in CONFIG_KEYS if k in values}}
-    _write_section("config", merged)
+    save_setting("config", merged)
 
 
 def _get_sizes() -> dict:
-    """Đọc bảng kích cỡ từ settings.json."""
-    sec = _read_settings().get("size", {})
+    """Lấy bảng kích cỡ qua size.load_size_values(), nơi đọc settings bằng settings_loader."""
+    values = load_size_values()
     return {
-        "ranges": {
-            k: list(v)
-            for k, v in sec.get("SIZE_RANGES", DEFAULT_SIZES["SIZE_RANGES"]).items()
-        },
-        "undersize_label": sec.get("UNDERSIZE_LABEL", DEFAULT_SIZES["UNDERSIZE_LABEL"]),
-        "oversize_label":  sec.get("OVERSIZE_LABEL",  DEFAULT_SIZES["OVERSIZE_LABEL"]),
-        "fallback_label":  sec.get("FALLBACK_LABEL",  DEFAULT_SIZES["FALLBACK_LABEL"]),
+        "ranges": {k: list(v) for k, v in values["SIZE_RANGES"].items()},
+        "undersize_label": values["UNDERSIZE_LABEL"],
+        "oversize_label":  values["OVERSIZE_LABEL"],
+        "fallback_label":  values["FALLBACK_LABEL"],
     }
 
 
@@ -312,6 +264,21 @@ def _json_files(run_dir: Path) -> list[Path]:
     return sorted(run_dir.glob("*/*_results.json"))
 
 
+def _selected_run_dir(run_name: str | None) -> Path | None:
+    runs = _run_dirs()
+    if run_name:
+        return next((r for r in runs if r.name == run_name), None)
+    return runs[0] if runs else None
+
+
+def _read_result_json(path: Path) -> dict[str, Any] | None:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
 def _image_url(raw: str | None) -> str | None:
     if not raw:
         return None
@@ -335,20 +302,14 @@ def _norm_images(images: dict | None) -> dict:
 
 
 def _results_for_run(run_name: str | None) -> dict:
-    runs = _run_dirs()
-    sel  = (
-        next((r for r in runs if r.name == run_name), None)
-        if run_name else
-        (runs[0] if runs else None)
-    )
+    sel = _selected_run_dir(run_name)
     if sel is None:
         return {"run": None, "sources": []}
 
     sources = []
     for jf in _json_files(sel):
-        try:
-            d = json.loads(jf.read_text(encoding="utf-8"))
-        except Exception:
+        d = _read_result_json(jf)
+        if d is None:
             continue
         sources.append({
             "source_file":     d.get("source_file",    jf.parent.name),
@@ -377,70 +338,14 @@ def _export_rows(data: dict) -> list[list]:
 
 # Excel 
 
-def _col_name(i: int) -> str:
-    name = ""
-    while i:
-        i, r = divmod(i - 1, 26)
-        name  = chr(65 + r) + name
-    return name
-
-
-def _xlsx_cell_xml(v: Any, row: int, col: int) -> str:
-    ref = f"{_col_name(col)}{row}"
-    if v is None:
-        return f'<c r="{ref}"/>'
-    if isinstance(v, (int, float)) and not isinstance(v, bool):
-        return f'<c r="{ref}"><v>{v}</v></c>'
-    return f'<c r="{ref}" t="inlineStr"><is><t>{xml_escape(str(v))}</t></is></c>'
-
-
 def _xlsx_bytes(rows: list[list]) -> bytes:
-    sheet_rows = [
-        f'<row r="{ri}">'
-        + "".join(_xlsx_cell_xml(v, ri, ci) for ci, v in enumerate(row, 1))
-        + "</row>"
-        for ri, row in enumerate(rows, 1)
-    ]
-    files = {
-        "[Content_Types].xml": (
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
-            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
-            '<Default Extension="xml" ContentType="application/xml"/>'
-            '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
-            '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
-            "</Types>"
-        ),
-        "_rels/.rels": (
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
-            "</Relationships>"
-        ),
-        "xl/workbook.xml": (
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
-            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
-            '<sheets><sheet name="Results" sheetId="1" r:id="rId1"/></sheets>'
-            "</workbook>"
-        ),
-        "xl/_rels/workbook.xml.rels": (
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
-            "</Relationships>"
-        ),
-        "xl/worksheets/sheet1.xml": (
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            f'<sheetData>{"".join(sheet_rows)}</sheetData>'
-            "</worksheet>"
-        ),
-    }
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Results"
+    for row in rows:
+        ws.append(row)
     buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        for name, content in files.items():
-            z.writestr(name, content)
+    wb.save(buf)
     return buf.getvalue()
 
 
@@ -477,69 +382,24 @@ def _read_col_csv(raw: bytes) -> list[float]:
     ]
 
 
-def _xlsx_shared(archive: zipfile.ZipFile) -> list[str]:
-    try:
-        root = ET.fromstring(archive.read("xl/sharedStrings.xml"))
-    except KeyError:
-        return []
-    return [
-        "".join(n.text or "" for n in si.iter()
-                if n.tag.endswith("}t") or n.tag == "t")
-        for si in root.iter()
-        if si.tag.endswith("}si") or si.tag == "si"
-    ]
-
-
-def _col_idx(ref: str) -> int:
-    m = re.match(r"[A-Z]+", ref.upper())
-    if not m:
-        return 0
-    idx = 0
-    for ch in m.group():
-        idx = idx * 26 + ord(ch) - ord("A") + 1
-    return idx - 1
-
-
-def _xlsx_cell_text(cell: ET.Element, shared: list[str]) -> str:
-    t = cell.attrib.get("t")
-    if t == "inlineStr":
-        return "".join(n.text or "" for n in cell.iter()
-                       if n.tag.endswith("}t") or n.tag == "t")
-    v = next((n for n in cell if n.tag.endswith("}v") or n.tag == "v"), None)
-    raw = v.text if v is not None else ""
-    if t == "s":
-        try:
-            return shared[int(raw)]
-        except Exception:
-            return ""
-    return str(raw or "")
-
-
 def _read_col_xlsx(raw: bytes) -> list[float]:
     """Đọc cột đầu tiên của XLSX, bỏ qua dòng header không phải số."""
-    with zipfile.ZipFile(io.BytesIO(raw)) as z:
-        try:
-            sheet_xml = z.read("xl/worksheets/sheet1.xml")
-        except KeyError:
+    try:
+        wb = load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
+    except Exception as e:
+        raise ValueError("File XLSX không hợp lệ") from e
+    try:
+        ws = wb.active
+        if ws is None:
             raise ValueError("Không tìm thấy sheet trong XLSX")
-        shared = _xlsx_shared(z)
-        root   = ET.fromstring(sheet_xml)
         values = []
-        for row in root.iter():
-            if not (row.tag.endswith("}row") or row.tag == "row"):
-                continue
-            first = next(
-                (c for c in row
-                 if (c.tag.endswith("}c") or c.tag == "c")
-                 and _col_idx(c.attrib.get("r", "A1")) == 0),
-                None,
-            )
-            if first is None:
-                continue
-            n = _parse_positive(_xlsx_cell_text(first, shared))
+        for row in ws.iter_rows(min_col=1, max_col=1, values_only=True):
+            n = _parse_positive(row[0] if row else None)
             if n is not None:
                 values.append(n)
-    return values
+        return values
+    finally:
+        wb.close()
 
 
 # Routes 
@@ -602,9 +462,13 @@ def run_pipeline():
     Không truyền bất kỳ tham số nào qua Python API.
     """
     global _proc, _running, _t_start, _t_end, _retcode
+    warnings: list[str] = []
     with _lock:
         if _running:
             return jsonify({"error": "Pipeline đang chạy"}), 409
+        _get_config()
+        _get_sizes()
+        warnings = pull_setting_warnings()
         _output_dir().mkdir(parents=True, exist_ok=True)
         _log_path().write_text("", encoding="utf-8")
         _t_start, _t_end, _retcode = time.time(), None, None
@@ -621,7 +485,7 @@ def run_pipeline():
             daemon=True,
             name="pipeline-watcher",
         ).start()
-    return jsonify({"ok": True, "status": _status()})
+    return jsonify({"ok": True, "status": _status(), "warnings": warnings})
 
 
 @app.get("/api/pipeline/status")
@@ -656,7 +520,10 @@ def pipeline_log():
 
 @app.get("/api/config")
 def get_config():
-    return jsonify(_get_config())
+    return jsonify({
+        "config": _get_config(),
+        "warnings": pull_setting_warnings(),
+    })
 
 
 @app.put("/api/config")
@@ -666,21 +533,27 @@ def put_config():
         _save_config(data)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
-    return jsonify(_get_config())
+    return jsonify({
+        "config": _get_config(),
+        "warnings": pull_setting_warnings(),
+    })
 
 
 # Kích cỡ 
 
 @app.get("/api/config/sizes")
 def get_sizes():
-    return jsonify(_get_sizes())
+    return jsonify({
+        "sizes": _get_sizes(),
+        "warnings": pull_setting_warnings(),
+    })
 
 
 @app.put("/api/config/sizes")
 def put_sizes():
     try:
         data = _validate_sizes(request.get_json(force=True, silent=True) or {})
-        _write_section("size", {
+        save_setting("size", {
             "SIZE_RANGES":     data["ranges"],
             "UNDERSIZE_LABEL": data["undersize_label"],
             "OVERSIZE_LABEL":  data["oversize_label"],
@@ -688,7 +561,10 @@ def put_sizes():
         })
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
-    return jsonify(_get_sizes())
+    return jsonify({
+        "sizes": _get_sizes(),
+        "warnings": pull_setting_warnings(),
+    })
 
 
 # Kết quả 
@@ -699,10 +575,9 @@ def result_runs():
     for rd in _run_dirs():
         count = 0
         for jf in _json_files(rd):
-            try:
-                count += len(json.loads(jf.read_text(encoding="utf-8")).get("shrimps", []))
-            except Exception:
-                pass
+            d = _read_result_json(jf)
+            if d is not None:
+                count += len(d.get("shrimps", []))
         runs.append({
             "name":         rd.name,
             "mtime":        rd.stat().st_mtime,
@@ -724,7 +599,7 @@ def export_csv():
     name = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(data["run"] or "empty"))
     return Response(
         buf.getvalue(),
-        mimetype="text/csv; charset=utf-8",
+        mimetype="text/csv",
         headers={"Content-Disposition": f"attachment; filename=shrimp_{name}.csv"},
     )
 
@@ -809,7 +684,7 @@ def calibrate():
     Tính SCALE bằng hồi quy tuyến tính qua gốc tọa độ:
         real_length_mm = SCALE x pixel_length
         SCALE = sum(pixel * real) / sum(pixel^2)
-    Lưu kết quả vào settings.json.
+    Lưu SCALE vào settings.json qua settings_loader.
     """
     payload  = request.get_json(force=True, silent=True) or {}
     run_name = str(payload.get("run") or "").strip()
@@ -819,16 +694,15 @@ def calibrate():
     if not isinstance(meas, list) or not meas:
         return jsonify({"error": "Chưa có dữ liệu đo thực tế"}), 400
 
-    run_dir = next((rd for rd in _run_dirs() if rd.name == run_name), None)
+    run_dir = _selected_run_dir(run_name)
     if run_dir is None:
         return jsonify({"error": f"Không tìm thấy run '{run_name}'"}), 404
 
     # Bảng tra pixel_length từ file JSON kết quả của backend
     px_index: dict[tuple[str, str], float] = {}
     for jf in _json_files(run_dir):
-        try:
-            d = json.loads(jf.read_text(encoding="utf-8"))
-        except Exception:
+        d = _read_result_json(jf)
+        if d is None:
             continue
         stem = str(d.get("source_stem") or jf.parent.name)
         for s in d.get("shrimps", []):
@@ -893,7 +767,7 @@ def calibrate():
 @app.get("/outputs/<path:filename>")
 def output_file(filename: str):
     root   = _output_dir().resolve()
-    target = (root / filename).resolve()
+    target = (root/filename).resolve()
     try:
         target.relative_to(root)
     except ValueError:
@@ -901,12 +775,11 @@ def output_file(filename: str):
     return send_from_directory(root, filename)
 
 
-# == Khởi động 
+# Khởi động
 
 if __name__ == "__main__":
-    _ensure_defaults()
-    host  = os.environ.get("HOST",         "127.0.0.1")
-    port  = int(os.environ.get("PORT",     "3000"))
+    host  = os.environ.get("HOST","127.0.0.1")
+    port  = int(os.environ.get("PORT","3000"))
     debug = os.environ.get("FLASK_DEBUG", "1").strip().lower() in {"1", "true", "yes", "on"}
     print(f"Shrimp Measure UI: http://{host}:{port}", flush=True)
     app.run(host=host, port=port, debug=debug, use_reloader=False)

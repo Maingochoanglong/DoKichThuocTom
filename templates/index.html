@@ -27,7 +27,7 @@
         --color-console-text: #a3e635;
       }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260526-config-scale">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260527-tailwind-pagination">
   </head>
   <body class="min-h-screen overflow-x-hidden bg-shop-floor text-ink antialiased">
     <a class="skip-link" href="#dataTab">Bỏ qua đầu trang</a>
@@ -81,11 +81,11 @@
                     <span id="uploadProgressBar"></span>
                   </div>
                 </div>
-                <div class="pager-top">
-                  <span class="pager-info" id="inputPageInfo">0 file</span>
-                  <label class="pager-size" for="inputPageSize">
-                    <span>Dòng/trang</span>
-                    <select class="form-select pager-select" id="inputPageSize">
+                <div class="mt-2 flex min-w-0 flex-col gap-2 border border-line bg-panel p-2 min-[480px]:flex-row min-[480px]:items-center min-[480px]:justify-between">
+                  <span class="min-w-0 text-sm font-extrabold leading-tight text-ink min-[480px]:whitespace-nowrap" id="inputPageInfo">0 file</span>
+                  <label class="flex min-w-0 items-center justify-between gap-1.5 min-[480px]:justify-end min-[480px]:gap-2" for="inputPageSize">
+                    <span class="shrink-0 text-[0.7rem] font-extrabold uppercase text-ink sm:text-xs">Dòng/trang</span>
+                    <select class="form-select !h-7 !min-h-7 !w-14 shrink-0 !px-2 !py-0.5 !pr-5 !text-xs font-extrabold min-[480px]:!w-16 sm:!h-8 sm:!min-h-8 sm:!text-sm md:!w-[4.5rem]" id="inputPageSize">
                       <option value="5" selected>5</option>
                       <option value="10">10</option>
                       <option value="25">25</option>
@@ -93,19 +93,19 @@
                   </label>
                 </div>
                 <div class="file-list" id="fileList"></div>
-                <div class="pager-pages" id="inputPager" hidden>
-                  <label class="pager-size pager-count" for="inputPageButtonCount">
-                    <span>Nút trang</span>
-                    <select class="form-select pager-select" id="inputPageButtonCount" data-page-button-count>
+                <div class="mt-2 flex min-w-0 flex-wrap items-center justify-center gap-2 border border-line bg-panel p-2" id="inputPager" hidden>
+                  <label class="flex basis-full items-center justify-center gap-1.5 min-[480px]:gap-2 sm:basis-auto" for="inputPageButtonCount">
+                    <span class="shrink-0 text-[0.7rem] font-extrabold uppercase text-ink sm:text-xs">Nút trang</span>
+                    <select class="form-select !h-7 !min-h-7 !w-14 shrink-0 !px-2 !py-0.5 !pr-5 !text-xs font-extrabold min-[480px]:!w-16 sm:!h-8 sm:!min-h-8 sm:!text-sm" id="inputPageButtonCount" data-page-button-count>
                       <option value="3" selected>3</option>
                       <option value="5">5</option>
                       <option value="7">7</option>
                       <option value="9">9</option>
                     </select>
                   </label>
-                  <button class="icon-button pager-btn" id="inputPrevPage" type="button" aria-label="Trang file trước"></button>
-                  <div class="pager-numbers" id="inputPageButtons" aria-label="Trang file input"></div>
-                  <button class="icon-button pager-btn" id="inputNextPage" type="button" aria-label="Trang file sau"></button>
+                  <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center border border-line-strong bg-panel text-ink transition hover:border-signal hover:text-signal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/30 disabled:cursor-not-allowed disabled:opacity-45" id="inputPrevPage" type="button" aria-label="Trang file trước"></button>
+                  <div class="flex min-w-0 flex-wrap items-center justify-center gap-1" id="inputPageButtons" aria-label="Trang file input"></div>
+                  <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center border border-line-strong bg-panel text-ink transition hover:border-signal hover:text-signal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/30 disabled:cursor-not-allowed disabled:opacity-45" id="inputNextPage" type="button" aria-label="Trang file sau"></button>
                 </div>
               </section>
 
@@ -167,11 +167,11 @@
                     Tải lại
                   </button>
                 </div>
-                <div class="pager-top result-toolbar-pager" id="resultPagerTop" hidden>
-                  <span class="pager-info" id="resultPageInfo">0-0 / 0</span>
-                  <label class="pager-size" for="resultPageSize">
-                    <span>Dòng/trang</span>
-                    <select class="form-select pager-select" id="resultPageSize">
+                <div class="mt-3 flex min-w-0 flex-col gap-2 border border-line bg-panel p-2 min-[480px]:flex-row min-[480px]:items-center min-[480px]:justify-between" id="resultPagerTop" hidden>
+                  <span class="min-w-0 text-sm font-extrabold leading-tight text-ink min-[480px]:whitespace-nowrap" id="resultPageInfo">0-0 / 0</span>
+                  <label class="flex min-w-0 items-center justify-between gap-1.5 min-[480px]:justify-end min-[480px]:gap-2" for="resultPageSize">
+                    <span class="shrink-0 text-[0.7rem] font-extrabold uppercase text-ink sm:text-xs">Dòng/trang</span>
+                    <select class="form-select !h-7 !min-h-7 !w-16 shrink-0 !px-2 !py-0.5 !pr-5 !text-xs font-extrabold min-[480px]:!w-[4.25rem] sm:!h-8 sm:!min-h-8 sm:!w-20 sm:!text-sm" id="resultPageSize">
                       <option value="10">10</option>
                       <option value="25" selected>25</option>
                       <option value="50">50</option>
@@ -194,19 +194,19 @@
               <div class="results-area" id="resultsArea">
                 <div class="empty-state">Chưa có kết quả. Hãy chạy đo hoặc kiểm tra thư mục OUTPUT_DIR.</div>
               </div>
-              <div class="pager-pages" id="resultPager" hidden>
-                <label class="pager-size pager-count" for="resultPageButtonCount">
-                  <span>Nút trang</span>
-                  <select class="form-select pager-select" id="resultPageButtonCount" data-page-button-count>
+              <div class="mt-2 flex min-w-0 flex-wrap items-center justify-center gap-2 border border-line bg-panel p-2" id="resultPager" hidden>
+                <label class="flex basis-full items-center justify-center gap-1.5 min-[480px]:gap-2 sm:basis-auto" for="resultPageButtonCount">
+                  <span class="shrink-0 text-[0.7rem] font-extrabold uppercase text-ink sm:text-xs">Nút trang</span>
+                  <select class="form-select !h-7 !min-h-7 !w-14 shrink-0 !px-2 !py-0.5 !pr-5 !text-xs font-extrabold min-[480px]:!w-16 sm:!h-8 sm:!min-h-8 sm:!text-sm" id="resultPageButtonCount" data-page-button-count>
                     <option value="3" selected>3</option>
                     <option value="5">5</option>
                     <option value="7">7</option>
                     <option value="9">9</option>
                   </select>
                 </label>
-                <button class="icon-button pager-btn" id="resultPrevPage" type="button" aria-label="Trang kết quả trước"></button>
-                <div class="pager-numbers" id="resultPageButtons" aria-label="Trang kết quả"></div>
-                <button class="icon-button pager-btn" id="resultNextPage" type="button" aria-label="Trang kết quả sau"></button>
+                <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center border border-line-strong bg-panel text-ink transition hover:border-signal hover:text-signal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/30 disabled:cursor-not-allowed disabled:opacity-45" id="resultPrevPage" type="button" aria-label="Trang kết quả trước"></button>
+                <div class="flex min-w-0 flex-wrap items-center justify-center gap-1" id="resultPageButtons" aria-label="Trang kết quả"></div>
+                <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center border border-line-strong bg-panel text-ink transition hover:border-signal hover:text-signal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/30 disabled:cursor-not-allowed disabled:opacity-45" id="resultNextPage" type="button" aria-label="Trang kết quả sau"></button>
               </div>
             </section>
           </section>
@@ -495,6 +495,6 @@
       </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260525-cleanup"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260527-tailwind-pagination"></script>
   </body>
 </html>

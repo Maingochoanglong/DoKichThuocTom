@@ -1,58 +1,43 @@
 """
 logger_setup.py
-Cấu hình logger dùng chung cho toàn bộ hệ thống đo tôm.
 
-Cách dùng trong mỗi module:
-    from logger_setup import get_logger
-    log = get_logger()
-
-    log.info("Thông báo thường")
-    log.warning("Cảnh báo")
-    log.error("Lỗi")
-
-Định dạng mỗi dòng log:
-    2026-05-18T10:30:00 [INFO] [F1] Đã đọc ảnh: shrimp.jpg
-
-Cấu trúc output:
-    output/pipeline.log   <- file log nằm ngoài cùng, ngoài tất cả folder con
-                             để API đọc dễ dàng
+Cấu hình logger dùng chung cho pipeline đo tôm.
 """
 
 import logging
 import sys
 from pathlib import Path
 
-from config import OUTPUT_DIR
 
 _LOGGER_NAME = "pipeline"
-_LOG_FORMAT  = "%(asctime)s [%(levelname)s] %(message)s"
+_LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 _DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 
-def setup_logging() -> logging.Logger:
-    """
-    Khởi tạo logger lần đầu.
-    File log nằm tại output/pipeline.log — ngoài tất cả folder con timestamp.
-    Gọi một lần duy nhất từ main() trước khi tạo thread.
+def _configure_stdout() -> None:
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
-    Returns:
-        Logger đã được cấu hình.
-    """
+
+def setup_logging(output_dir: str | Path) -> logging.Logger:
+    """Khởi tạo logger pipeline tại OUTPUT_DIR/pipeline.log."""
     logger = logging.getLogger(_LOGGER_NAME)
-    if logger.handlers:          # tránh thêm handler trùng khi test
+    logger.propagate = False
+    if logger.handlers:
         return logger
 
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter(_LOG_FORMAT, datefmt=_DATE_FORMAT)
 
-    # Handler 1: Console (stdout) - giống print cũ
+    _configure_stdout()
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.DEBUG)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    # Handler 2: File - pipeline.log nằm ngoài cùng output/
-    log_path = Path(OUTPUT_DIR) / "pipeline.log"
+    log_path = Path(output_dir) / "pipeline.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     file_handler = logging.FileHandler(str(log_path), encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
@@ -64,8 +49,5 @@ def setup_logging() -> logging.Logger:
 
 
 def get_logger() -> logging.Logger:
-    """
-    Lấy logger đã được setup (gọi sau setup_logging).
-    Dùng trong tất cả các module con: pipeline, draw_utils, main, v.v.
-    """
+    """Lấy logger pipeline đã được cấu hình bởi main.py."""
     return logging.getLogger(_LOGGER_NAME)

@@ -1,47 +1,55 @@
 """
 size.py
 
-Định nghĩa các hằng số và hàm phân loại kích cỡ tôm theo chiều dài thực (mm).
-
-Bảng phân loại và các nhãn ngoại cỡ đều đọc từ settings.json (section "size").
-Nếu key chưa có trong file, giá trị mặc định sẽ được tự động ghi lại vào file.
+Định nghĩa bảng phân loại kích cỡ tôm theo chiều dài thực tế.
+Các giá trị chỉnh được đọc từ settings.json qua settings_loader.
 """
 
 from settings_loader import load_setting
 
 
-# Bảng phân loại kích cỡ: nhãn -> (từ mm, đến mm).
-SIZE_RANGES: dict[str, tuple[float, float]] = {
-    str(label): (float(bounds[0]), float(bounds[1]))
-    for label, bounds in load_setting(
+def load_size_values() -> dict:
+    """Đọc toàn bộ cấu hình kích cỡ và tự ghi default nếu thiếu."""
+    raw_ranges = load_setting(
         "SIZE_RANGES",
-        {},
+        {
+            "S": [12, 14],
+            "M": [14, 17],
+            "L": [18, 22],
+        },
         section="size",
-    ).items()
-}
+    )
+
+    return {
+        "SIZE_RANGES": {
+            str(label): (float(bounds[0]), float(bounds[1]))
+            for label, bounds in raw_ranges.items()
+        },
+        "UNDERSIZE_LABEL": str(load_setting("UNDERSIZE_LABEL", "Ngoại cỡ nhỏ", section="size")),
+        "OVERSIZE_LABEL": str(load_setting("OVERSIZE_LABEL", "Ngoại cỡ lớn", section="size")),
+        "FALLBACK_LABEL": str(load_setting("FALLBACK_LABEL", "Ngoại cỡ", section="size")),
+    }
+
+
+_SIZE_VALUES = load_size_values()
+
+# Bảng phân loại kích cỡ: nhãn -> khoảng [từ mm, đến mm).
+SIZE_RANGES: dict[str, tuple[float, float]] = _SIZE_VALUES["SIZE_RANGES"]
 
 # Nhãn cho tôm nhỏ hơn khoảng đầu tiên trong bảng.
-UNDERSIZE_LABEL = str(load_setting("UNDERSIZE_LABEL", "Ngoại cỡ nhỏ", section="size"))
+UNDERSIZE_LABEL = _SIZE_VALUES["UNDERSIZE_LABEL"]
 
 # Nhãn cho tôm lớn hơn khoảng cuối cùng trong bảng.
-OVERSIZE_LABEL = str(load_setting("OVERSIZE_LABEL", "Ngoại cỡ lớn", section="size"))
+OVERSIZE_LABEL = _SIZE_VALUES["OVERSIZE_LABEL"]
 
-# Nhãn dự phòng khi chiều dài không khớp với khoảng nào (bảng rỗng hoặc ngoài tất cả khoảng).
-FALLBACK_LABEL = str(load_setting("FALLBACK_LABEL", "Ngoại cỡ", section="size"))
+# Nhãn dự phòng khi chiều dài không khớp với khoảng nào.
+FALLBACK_LABEL = _SIZE_VALUES["FALLBACK_LABEL"]
 
 
 def classify_size(real_length: float) -> str:
     """
-    Phân loại tôm theo chiều dài thực (mm).
-
-    Duyệt qua SIZE_RANGES theo thứ tự khai báo. Khoảng [lo, hi) là nửa mở
-    (lo <= real_length < hi).
-
-    Tham số:
-        real_length: Chiều dài thực của tôm tính bằng mm.
-
-    Trả về:
-        Nhãn kích cỡ (ví dụ "S", "M", "L") hoặc nhãn ngoại cỡ tương ứng.
+    Phân loại tôm theo chiều dài thực tế.
+    Khoảng phân loại dùng dạng nửa mở: lo <= real_length < hi.
     """
     for size_label, (lo, hi) in SIZE_RANGES.items():
         if lo <= real_length < hi:

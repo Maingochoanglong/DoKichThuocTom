@@ -24,6 +24,7 @@ const state = {
   imageDragging: false,
   imageDragStart: null,
   confirmResolver: null,
+  settingsWarnings: [],
   lastFocusedElement: null,
   uploading: false,
   scaleImporting: false,
@@ -33,6 +34,7 @@ const $ = (id) => document.getElementById(id);
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 const RUNNING_LOCKED_TABS = new Set(["configTab", "sizesTab"]);
+let pagerResizeTimer = null;
 
 const heroIcon = (paths, width = "1.5") => (
   `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${width}" aria-hidden="true">` +
@@ -254,6 +256,24 @@ function toast(message, type = "ok", options = {}) {
   toast.timer = window.setTimeout(() => box.classList.remove("show"), options.duration || (type === "success" ? 4200 : 3000));
 }
 
+function uniqueWarnings(warnings) {
+  return [...new Set((warnings || []).filter(Boolean).map((item) => String(item)))];
+}
+
+function showSettingsWarnings(warnings, { remember = true } = {}) {
+  const list = uniqueWarnings(warnings);
+  if (!list.length) return false;
+  if (remember) {
+    state.settingsWarnings = uniqueWarnings([...state.settingsWarnings, ...list]);
+  }
+  toast(list.join(" "), "warning", { title: "Đã phục hồi settings.json", duration: 7000 });
+  return true;
+}
+
+function handleSettingsWarnings(payload, options = {}) {
+  return showSettingsWarnings(payload?.warnings, options);
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -288,7 +308,7 @@ function pageWindow(total, page, pageSize) {
 }
 
 function pageNumberWindow(currentPage, totalPages) {
-  const count = Number(state.pageButtonCount) || 3;
+  const count = effectivePageButtonCount();
   const size = Math.min(Math.max(3, count), totalPages);
   let start = Math.max(1, currentPage - 1);
   let end = Math.min(totalPages, start + size - 1);
@@ -300,6 +320,42 @@ function pageNumberWindow(currentPage, totalPages) {
   return pages;
 }
 
+function viewportPageButtonLimit() {
+  const width = window.innerWidth || document.documentElement.clientWidth || 1024;
+  if (width < 640) return 3;
+  if (width < 768) return 5;
+  if (width < 1024) return 7;
+  return 9;
+}
+
+function effectivePageButtonCount() {
+  const selected = Math.min(Math.max(3, Number(state.pageButtonCount) || 3), 9);
+  return Math.min(selected, viewportPageButtonLimit());
+}
+
+function pagerNumberClass(active) {
+  const base = [
+    "pager-number",
+    "inline-flex",
+    "h-9",
+    "w-9",
+    "shrink-0",
+    "items-center",
+    "justify-center",
+    "border",
+    "text-sm",
+    "font-black",
+    "transition",
+    "focus-visible:outline-none",
+    "focus-visible:ring-2",
+    "focus-visible:ring-signal/30",
+  ].join(" ");
+  const variant = active
+    ? "border-signal bg-signal-soft text-signal"
+    : "border-line-strong bg-panel text-ink hover:border-signal hover:bg-signal-soft hover:text-signal";
+  return `${base} ${variant}`;
+}
+
 function renderPageNumbers(containerId, currentPage, totalPages, onClick) {
   const container = $(containerId);
   if (!container) return;
@@ -307,7 +363,7 @@ function renderPageNumbers(containerId, currentPage, totalPages, onClick) {
   pageNumberWindow(currentPage, totalPages).forEach((page) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "pager-number";
+    button.className = pagerNumberClass(page === currentPage);
     button.setAttribute("aria-label", `Trang ${page}`);
     if (page === currentPage) {
       button.setAttribute("aria-current", "page");
@@ -316,6 +372,7 @@ function renderPageNumbers(containerId, currentPage, totalPages, onClick) {
     button.addEventListener("click", () => {
       container.querySelectorAll(".pager-number").forEach((node) => {
         node.removeAttribute("aria-current");
+        node.className = pagerNumberClass(node === button);
       });
       button.setAttribute("aria-current", "page");
       onClick(page);
@@ -504,7 +561,17 @@ function applyConfig(config) {
 }
 
 async function loadConfig() {
-  applyConfig(await requestJson("/api/config"));
+  const payload = await requestJson("/api/config");
+  handleSettingsWarnings(payload);
+  applyConfig(payload.config || payload);
+}
+
+function rerenderPagersForViewport() {
+  window.clearTimeout(pagerResizeTimer);
+  pagerResizeTimer = window.setTimeout(() => {
+    renderInputFiles();
+    renderCurrentResults();
+  }, 120);
 }
 
 function collectConfig() {
@@ -536,7 +603,9 @@ function collectConfig() {
 }
 
 async function saveCurrentConfig() {
-  applyConfig(await sendJson("/api/config", "PUT", collectConfig()));
+  const payload = await sendJson("/api/config", "PUT", collectConfig());
+  handleSettingsWarnings(payload);
+  applyConfig(payload.config || payload);
   await loadInputFiles();
 }
 
@@ -561,7 +630,9 @@ function applySizes(sizes) {
 }
 
 async function loadSizes() {
-  applySizes(await requestJson("/api/config/sizes"));
+  const payload = await requestJson("/api/config/sizes");
+  handleSettingsWarnings(payload);
+  applySizes(payload.sizes || payload);
 }
 
 function renderSizeRows() {
@@ -639,7 +710,9 @@ async function saveSizes(event) {
   event.preventDefault();
   const submitter = event.submitter || event.currentTarget.querySelector("[type='submit']");
   try {
-    applySizes(await sendJson("/api/config/sizes", "PUT", collectSizes()));
+    const payload = await sendJson("/api/config/sizes", "PUT", collectSizes());
+    handleSettingsWarnings(payload);
+    applySizes(payload.sizes || payload);
     flashSaved(submitter, "Đã lưu phân loại");
     toast("Bảng phân loại kích cỡ đã được lưu chính thức vào settings.json", "success", { title: "Đã lưu phân loại" });
   } catch (error) {
@@ -845,7 +918,17 @@ async function runPipeline() {
     if (payload.status?.running) {
       startStatusPolling();
     }
-    toast("Pipeline đã bắt đầu chạy", "ok");
+    const runWarnings = uniqueWarnings([...(state.settingsWarnings || []), ...(payload.warnings || [])]);
+    state.settingsWarnings = [];
+    if (runWarnings.length) {
+      toast(
+        `${runWarnings.join(" ")} Pipeline vẫn bắt đầu bằng tham số mặc định.`,
+        "warning",
+        { title: "Đã phục hồi settings.json", duration: 8000 },
+      );
+    } else {
+      toast("Pipeline đã bắt đầu chạy", "ok");
+    }
   } catch (error) {
     toast(error.message, "error");
   }
@@ -1387,6 +1470,7 @@ function bindEvents() {
       renderCurrentResults();
     });
   });
+  window.addEventListener("resize", rerenderPagersForViewport);
   const confirmCancelBtn = $("confirmCancelBtn");
   const confirmAcceptBtn = $("confirmAcceptBtn");
   const confirmModal = $("confirmModal");
