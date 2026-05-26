@@ -1,4 +1,3 @@
-__pycache__/*
 .conda/
 .vscode/
 input/
@@ -9,6 +8,8 @@ benchmark/
 test/
 test1/
 scale/
-cong/
+cong/*
 chunk_test/
 tool/*
+__pycache__/
+*.pyc
