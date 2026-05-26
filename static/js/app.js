@@ -1114,10 +1114,10 @@ function collectScaleMeasurements() {
     .filter((item) => Number.isFinite(item.real_length_mm) && item.real_length_mm > 0);
 }
 
-// Lấy danh sách tôm trang hiện tại theo đúng thứ tự hiển thị để ghép với file import.
 function currentScaleOrderRows() {
   const filter = $("sizeFilter").value;
   const rows = [];
+
   (state.currentResults?.sources || []).forEach((source) => {
     (source.shrimps || []).forEach((shrimp) => {
       if (!filter || String(shrimp.size) === filter) {
@@ -1129,8 +1129,7 @@ function currentScaleOrderRows() {
       }
     });
   });
-  const windowInfo = pageWindow(rows.length, state.resultPage, state.resultPageSize);
-  return rows.slice(windowInfo.start, windowInfo.end);
+  return rows;
 }
 
 function setScaleImporting(importing) {
