@@ -24,7 +24,7 @@ from flask import Flask, Response, jsonify, render_template, request, send_from_
 from openpyxl import Workbook, load_workbook
 
 from config import load_config_values
-from settings_loader import pull_setting_warnings, read_setting, save_setting
+from settings_loader import preflight_settings, pull_setting_warnings, read_setting, save_setting
 from size import load_size_values
 
 
@@ -70,6 +70,35 @@ def _get_config() -> dict:
     đều được settings_loader phục hồi và ghi default nếu cần.
     """
     return load_config_values()
+
+
+def _unique_messages(messages: list[str]) -> list[str]:
+    """Giữ nguyên thứ tự cảnh báo nhưng bỏ nội dung trùng lặp."""
+    seen: set[str] = set()
+    result: list[str] = []
+    for message in messages:
+        if message and message not in seen:
+            seen.add(message)
+            result.append(message)
+    return result
+
+
+def _settings_preflight_payload() -> dict:
+    """Phục hồi settings nếu cần và trả payload đồng bộ cho UI."""
+    preflight = preflight_settings()
+    config = _get_config()
+    sizes = _get_sizes()
+    warnings = _unique_messages([
+        *preflight.get("warnings", []),
+        *pull_setting_warnings(),
+    ])
+    return {
+        "ok": True,
+        "recovered": bool(preflight["recovered"]),
+        "warnings": warnings,
+        "config": config,
+        "sizes": sizes,
+    }
 
 
 def _save_config(values: dict) -> None:
@@ -559,6 +588,14 @@ def delete_input(filename: str):
     return jsonify({"ok": True})
 
 
+# Settings preflight
+
+@app.post("/api/settings/preflight")
+def settings_preflight():
+    """Phục hồi settings.json nếu cần trước khi UI hoặc pipeline tiếp tục."""
+    return jsonify(_settings_preflight_payload())
+
+
 # Pipeline
 
 @app.post("/api/pipeline/run")
@@ -566,18 +603,20 @@ def run_pipeline():
     """
     Khởi động pipeline bằng subprocess main.py.
 
-    Trước khi chạy, app ép config và size được load qua settings_loader để
-    settings.json thiếu hoặc hỏng được phục hồi. Response gồm trạng thái ban
-    đầu và warnings để UI hiển thị toast nếu vừa phục hồi settings.json.
+    Trước khi chạy, app kiểm tra settings.json. Nếu phải phục hồi file, endpoint
+    trả 409 để UI dừng lại cho người dùng kiểm tra cấu hình trước khi đo.
     """
     global _proc, _running, _t_start, _t_end, _retcode
     warnings: list[str] = []
     with _lock:
         if _running:
             return jsonify({"error": "Pipeline đang chạy"}), 409
-        _get_config()
-        _get_sizes()
-        warnings = pull_setting_warnings()
+        preflight = _settings_preflight_payload()
+        if preflight["recovered"]:
+            preflight["error"] = "settings.json đã được phục hồi. Hãy kiểm tra cấu hình trước khi chạy đo."
+            preflight["code"] = "SETTINGS_RECOVERED"
+            return jsonify(preflight), 409
+        warnings = list(preflight["warnings"])
         _output_dir().mkdir(parents=True, exist_ok=True)
         _log_path().write_text("", encoding="utf-8")
         _t_start, _t_end, _retcode = time.time(), None, None

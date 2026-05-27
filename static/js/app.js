@@ -27,6 +27,7 @@ const state = {
   imageDragStart: null,
   confirmResolver: null,
   settingsWarnings: [],
+  recovering: false,
   lastFocusedElement: null,
   uploading: false,
   scaleImporting: false,
@@ -89,7 +90,11 @@ async function requestJson(url, options = {}) {
   const response = await fetch(url, options);
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error || `HTTP ${response.status}`);
+    const error = new Error(payload.error || `HTTP ${response.status}`);
+    error.status = response.status;
+    error.code = payload.code;
+    error.payload = payload;
+    throw error;
   }
   return payload;
 }
@@ -303,45 +308,64 @@ function handleSettingsWarnings(payload, options = {}) {
   return showSettingsWarnings(payload?.warnings, options);
 }
 
-function setRunning(running) {
-  state.running = running;
-  document.body.classList.toggle("is-running", running);
+function renderRunButton() {
+  const runBtn = $("runBtn");
+  if (!runBtn) return;
+  const busy = state.running || state.recovering;
+  runBtn.disabled = busy;
+  runBtn.classList.toggle("run-active", busy);
+  runBtn.innerHTML = state.recovering
+    ? `<span class="spinner-border" aria-hidden="true"></span> Đang phục hồi`
+    : state.running
+      ? `<span class="spinner-border" aria-hidden="true"></span> Đang đo`
+      : `${icons.play} Bắt đầu đo`;
+}
+
+function syncBusyState() {
+  const busy = state.running || state.recovering;
+  document.body.classList.toggle("is-running", state.running);
+  document.body.classList.toggle("is-recovering", state.recovering);
   document.querySelectorAll("[data-tab-target]").forEach((button) => {
-    button.disabled = running && RUNNING_LOCKED_TABS.has(button.dataset.tabTarget);
+    button.disabled = state.running && RUNNING_LOCKED_TABS.has(button.dataset.tabTarget);
   });
-  if (running && RUNNING_LOCKED_TABS.has(state.activeTab)) {
+  if (state.running && RUNNING_LOCKED_TABS.has(state.activeTab)) {
     activateTab("dataTab");
   }
 
-  const runBtn = $("runBtn");
-  runBtn.disabled = running;
-  runBtn.classList.toggle("run-active", running);
-  runBtn.innerHTML = running
-    ? `<span class="spinner-border" aria-hidden="true"></span> Đang đo`
-    : `${icons.play} Bắt đầu đo`;
+  renderRunButton();
 
   ["scaleModeBtn", "applyScaleBtn", "cancelScaleBtn", "scaleImportBtn"].forEach((id) => {
     const button = $(id);
-    if (button) button.disabled = running || state.scaleImporting;
+    if (button) button.disabled = busy || state.scaleImporting;
   });
-  if ($("scaleImportInput")) $("scaleImportInput").disabled = running || state.scaleImporting;
+  if ($("scaleImportInput")) $("scaleImportInput").disabled = busy || state.scaleImporting;
 
-  $("fileInput").disabled = running || state.uploading;
-  $("folderInput").disabled = running || state.uploading;
+  $("fileInput").disabled = busy || state.uploading;
+  $("folderInput").disabled = busy || state.uploading;
   ["chooseFileBtn", "chooseFolderBtn"].forEach((id) => {
     const button = $(id);
-    if (button) button.disabled = running || state.uploading;
+    if (button) button.disabled = busy || state.uploading;
   });
-  $("dropZone").classList.toggle("disabled", running || state.uploading);
+  $("dropZone").classList.toggle("disabled", busy || state.uploading);
   document.querySelectorAll("#configForm input, #configForm button, #sizeForm input, #sizeForm button")
     .forEach((node) => {
-      node.disabled = running;
+      node.disabled = busy;
     });
 
   const status = $("pipelineStatus");
-  status.classList.toggle("running", running);
+  status.classList.toggle("running", busy);
   status.classList.remove("error");
-  status.textContent = running ? "Đang chạy" : "Sẵn sàng";
+  status.textContent = state.recovering ? "Đang phục hồi" : (state.running ? "Đang chạy" : "Sẵn sàng");
+}
+
+function setRunning(running) {
+  state.running = running;
+  syncBusyState();
+}
+
+function setRecovering(recovering) {
+  state.recovering = recovering;
+  syncBusyState();
 }
 
 // Pagination helper
@@ -523,6 +547,7 @@ async function saveCurrentConfig() {
   const payload = await sendJson("/api/config", "PUT", collectConfig());
   handleSettingsWarnings(payload);
   applyConfig(payload.config || payload);
+  state.settingsWarnings = [];
   await loadInputFiles();
 }
 
@@ -630,6 +655,7 @@ async function saveSizes(event) {
     const payload = await sendJson("/api/config/sizes", "PUT", collectSizes());
     handleSettingsWarnings(payload);
     applySizes(payload.sizes || payload);
+    state.settingsWarnings = [];
     flashSaved(submitter, "Đã lưu phân loại");
     toast("Bảng phân loại kích cỡ đã được lưu chính thức vào settings.json", "success", { title: "Đã lưu phân loại" });
   } catch (error) {
@@ -650,11 +676,12 @@ function setUploadProgress({ visible = true, percent = 0, text = "" } = {}) {
 
 function setUploading(uploading) {
   state.uploading = uploading;
+  const busy = state.running || state.recovering;
   ["fileInput", "folderInput", "chooseFileBtn", "chooseFolderBtn"].forEach((id) => {
     const node = $(id);
-    if (node) node.disabled = uploading || state.running;
+    if (node) node.disabled = uploading || busy;
   });
-  $("dropZone")?.classList.toggle("disabled", uploading || state.running);
+  $("dropZone")?.classList.toggle("disabled", uploading || busy);
 }
 
 function uploadRequest(form) {
@@ -691,7 +718,7 @@ function uploadRequest(form) {
 }
 
 async function uploadFiles(files) {
-  if (!files.length || state.running || state.uploading) return;
+  if (!files.length || state.running || state.recovering || state.uploading) return;
   const form = new FormData();
   Array.from(files).forEach((file) => form.append("files", file));
   setUploading(true);
@@ -795,10 +822,48 @@ async function deleteInputFile(name) {
 
 // Pipeline status và log polling
 
+function applySettingsPreflightPayload(payload, { activateOnRecovered = false } = {}) {
+  if (payload?.config) {
+    applyConfig(payload.config);
+  }
+  if (payload?.sizes) {
+    applySizes(payload.sizes);
+  }
+  const recovered = Boolean(payload?.recovered);
+  handleSettingsWarnings(payload, { remember: !recovered });
+  if (recovered) {
+    state.settingsWarnings = [];
+    if (activateOnRecovered) {
+      activateTab("configTab");
+    }
+  }
+  return recovered;
+}
+
+async function runSettingsPreflight({ showRecovering = false, activateOnRecovered = false } = {}) {
+  if (showRecovering) {
+    setRecovering(true);
+  }
+  try {
+    const payload = await requestJson("/api/settings/preflight", { method: "POST" });
+    applySettingsPreflightPayload(payload, { activateOnRecovered });
+    return payload;
+  } finally {
+    if (showRecovering) {
+      setRecovering(false);
+    }
+  }
+}
+
 function updateStatusView(status) {
   const running = Boolean(status.running);
   setRunning(running);
   const statusEl = $("pipelineStatus");
+  if (state.recovering) {
+    statusEl.classList.remove("error");
+    statusEl.textContent = "Đang phục hồi";
+    return;
+  }
   if (!running && status.returncode !== null && status.returncode !== 0) {
     statusEl.classList.add("error");
     statusEl.textContent = `Lỗi ${status.returncode}`;
@@ -909,12 +974,22 @@ async function confirmPipelineDataDeletion() {
 }
 
 async function runPipeline() {
-  if (!(await confirmPipelineDataDeletion())) return;
+  if (state.running || state.recovering) return;
 
   try {
     const runBtn = $("runBtn");
     runBtn.classList.add("run-clicked");
     window.setTimeout(() => runBtn.classList.remove("run-clicked"), 260);
+    const preflight = await runSettingsPreflight({ showRecovering: true, activateOnRecovered: true });
+    if (preflight.recovered) return;
+  } catch (error) {
+    toast(error.message, "error");
+    return;
+  }
+
+  if (!(await confirmPipelineDataDeletion())) return;
+
+  try {
     $("logBody").textContent = "";
     state.logOffset = 0;
     const payload = await requestJson("/api/pipeline/run", { method: "POST" });
@@ -935,6 +1010,15 @@ async function runPipeline() {
       toast("Pipeline đã bắt đầu chạy", "ok");
     }
   } catch (error) {
+    if (error.code === "SETTINGS_RECOVERED" && error.payload) {
+      setRecovering(true);
+      try {
+        applySettingsPreflightPayload(error.payload, { activateOnRecovered: true });
+      } finally {
+        setRecovering(false);
+      }
+      return;
+    }
     toast(error.message, "error");
   }
 }
@@ -1617,7 +1701,7 @@ function bindEvents() {
   ["dragenter", "dragover"].forEach((eventName) => {
     dropZone.addEventListener(eventName, (event) => {
       event.preventDefault();
-      if (!state.running) dropZone.classList.add("dragging");
+      if (!state.running && !state.recovering) dropZone.classList.add("dragging");
     });
   });
   ["dragleave", "drop"].forEach((eventName) => {
@@ -1634,7 +1718,8 @@ async function init() {
   setRunning(false);
   updateScaleControls();
   try {
-    await Promise.all([loadConfig(), loadSizes(), loadInputFiles(), loadRuns()]);
+    await runSettingsPreflight({ activateOnRecovered: true });
+    await Promise.all([loadInputFiles(), loadRuns()]);
     await loadResults();
     await pollLog();
     await refreshStatus();

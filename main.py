@@ -48,6 +48,7 @@ from pipeline import (
     flow1_read_input, flow2_detect_track, flow3_touch_logic,
     flow4_segment, flow5_longest_path, flow6_save_results,
 )
+from settings_loader import preflight_settings
 from size import load_size_values
 
 
@@ -156,6 +157,16 @@ def main() -> int:
     queue F1 đến F6, chạy thread, gom lỗi và ghi thời gian. Trả 0 khi thành
     công, trả 1 nếu bất kỳ flow nào ném exception.
     """
+    preflight = preflight_settings()
+    if preflight["recovered"]:
+        for warning in preflight["warnings"]:
+            print(warning, flush=True)
+        print(
+            "Đã phục hồi settings.json. Hãy kiểm tra và lưu lại cấu hình trước khi chạy đo.",
+            flush=True,
+        )
+        return 2
+
     t_start = time.perf_counter()
     cfg = load_config_values()
     size_cfg = load_size_values()

@@ -36,6 +36,24 @@ def read_setting() -> dict[str, Any]:
     return settings
 
 
+def preflight_settings() -> dict[str, Any]:
+    """
+    Kiểm tra settings.json trước khi chạy pipeline.
+
+    Nếu file thiếu hoặc hỏng, hàm chỉ phục hồi file và trả cờ recovered để
+    caller dừng pipeline, cho người dùng kiểm tra lại cấu hình trước khi đo.
+    """
+    settings = _read_settings_file()
+    recovered = settings is None
+    if recovered:
+        _recover_settings_file()
+    return {
+        "ok": True,
+        "recovered": recovered,
+        "warnings": pull_setting_warnings() if recovered else [],
+    }
+
+
 def load_setting(key: str, default: Any, section: str = "config") -> Any:
     """
     Đọc một giá trị theo đúng section.
