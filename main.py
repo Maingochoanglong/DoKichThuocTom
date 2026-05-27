@@ -2,6 +2,8 @@
 main.py
 
 Entry point của hệ thống đo chiều dài tôm tự động trên băng chuyền.
+File này tải model, tạo queue giữa 6 flow, chạy mỗi flow trong một thread và
+trả exit code 0 hoặc 1 cho app.py khi chạy dưới dạng subprocess.
 """
 
 import shutil
@@ -19,6 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent
 
 
 def _setup_openvino_cache(cache_dir: Path) -> None:
+    """
+    Cấu hình cache OpenVINO trước khi Ultralytics tạo ov.Core.
+
+    Hàm monkey patch ov.Core để mọi core mới đều dùng CACHE_DIR cố định trong
+    thư mục dự án, giúp lần tải model sau nhanh hơn.
+    """
     cache_dir.mkdir(parents=True, exist_ok=True)
     original_core = ov.Core
 
@@ -34,18 +42,22 @@ _setup_openvino_cache(BASE_DIR / "openvino_cache")
 
 from ultralytics import YOLO
 
-from config import (
-    CLEAR_INPUT, CLEAR_OUTPUT, QUEUE_SIZE,
-    INPUT_DIR, MODEL_DET, MODEL_SEG, OUTPUT_DIR, SAVE,
-)
+from config import MODEL_DET, MODEL_SEG, QUEUE_SIZE, load_config_values
 from logger_setup import setup_logging
 from pipeline import (
     flow1_read_input, flow2_detect_track, flow3_touch_logic,
     flow4_segment, flow5_longest_path, flow6_save_results,
 )
+from size import load_size_values
 
 
 def _force_put_sentinel(q: Queue) -> None:
+    """
+    Ép đưa sentinel None vào queue ngay cả khi queue đang đầy.
+
+    Khi một flow lỗi, helper này bỏ bớt item cũ nếu cần để các flow đang chờ
+    queue có thể nhận None và thoát.
+    """
     while True:
         try:
             q.put_nowait(None)
@@ -58,7 +70,12 @@ def _force_put_sentinel(q: Queue) -> None:
 
 
 def _clear_output_dir(output_dir: str) -> bool:
-    """Xóa toàn bộ nội dung output trước mỗi lần chạy mới."""
+    """
+    Xóa toàn bộ output_dir rồi tạo lại thư mục.
+
+    Trả về True nếu thư mục đã tồn tại trước khi xóa, để main() có thể log
+    rõ việc CLEAR_OUTPUT đã thực sự dọn output cũ.
+    """
     p = Path(output_dir)
     existed = p.exists()
     if existed:
@@ -75,7 +92,13 @@ def _safe_thread(
     error_lock: threading.Lock,
     all_queues: list[Queue],
 ) -> None:
-    """Bọc flow để lỗi ở một luồng sẽ unblock toàn bộ queue còn lại."""
+    """
+    Chạy một flow và chuyển lỗi thành trạng thái pipeline có thể báo cáo.
+
+    Nếu target ném exception, hàm lưu tên thread, exception và traceback vào
+    error_info, sau đó gửi sentinel None tới toàn bộ queue để các flow khác
+    không bị treo khi join thread.
+    """
     try:
         target(*args)
     except Exception as exc:
@@ -87,6 +110,7 @@ def _safe_thread(
 
 
 def _report_pipeline_errors(log, error_info: list[tuple]) -> None:
+    """Ghi toàn bộ exception của các flow vào pipeline.log."""
     sep = "=" * 60
     log.error(f"\n{sep}")
     log.error(f"  LỖI PIPELINE - {len(error_info)} luồng gặp sự cố")
@@ -101,6 +125,7 @@ def _report_pipeline_errors(log, error_info: list[tuple]) -> None:
 
 
 def _report_flow_times(log, flow_times: dict[str, float], elapsed: float) -> None:
+    """Ghi bảng thời gian từng flow và tổng thời gian chạy pipeline."""
     time_str = time.strftime("%H:%M:%S", time.gmtime(elapsed))
     labels = {
         "F1": "Đọc input (Ảnh/Video)  ",
@@ -119,20 +144,30 @@ def _report_flow_times(log, flow_times: dict[str, float], elapsed: float) -> Non
         if val is not None:
             log.info(f"  {key}  {labels[key]}  {val:>8.2f} s")
     log.info(f"{'-' * 52}")
-    log.info(f"  TỔNG CỘNG                           {elapsed:>8.2f} s  ({time_str})")
+    log.info(f"  TỔNG CỘNG                    {elapsed:>8.2f} s  ({time_str})")
     log.info(f"{sep}")
 
 
 def main() -> int:
-    t_start = time.perf_counter()
-    output_cleared = _clear_output_dir(OUTPUT_DIR) if CLEAR_OUTPUT else False
+    """
+    Chạy pipeline hoàn chỉnh và trả exit code.
 
-    log = setup_logging(OUTPUT_DIR)
+    Luồng chính gồm dọn output nếu cần, setup logger, tải hai model YOLO, tạo
+    queue F1 đến F6, chạy thread, gom lỗi và ghi thời gian. Trả 0 khi thành
+    công, trả 1 nếu bất kỳ flow nào ném exception.
+    """
+    t_start = time.perf_counter()
+    cfg = load_config_values()
+    size_cfg = load_size_values()
+    output_dir = cfg["OUTPUT_DIR"]
+    output_cleared = _clear_output_dir(output_dir) if cfg["CLEAR_OUTPUT"] else False
+
+    log = setup_logging(output_dir)
     if output_cleared:
-        log.info(f"Đã xóa output cũ: {OUTPUT_DIR}/")
+        log.info(f"Đã xóa output cũ: {output_dir}/")
 
     timestamp = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
-    run_dir = str(Path(OUTPUT_DIR) / timestamp)
+    run_dir = str(Path(output_dir) / timestamp)
     Path(run_dir).mkdir(parents=True, exist_ok=True)
 
     log.info("Đang tải mô hình 1 - Phát hiện (Detect)...")
@@ -142,8 +177,12 @@ def main() -> int:
     model_seg = YOLO(MODEL_SEG, task="segment")
 
     log.info("Tải mô hình hoàn tất.")
-    log.info(f"SAVE={SAVE}  CLEAR_INPUT={CLEAR_INPUT}  CLEAR_OUTPUT={CLEAR_OUTPUT}")
-    log.info(f"Input  : {INPUT_DIR}/")
+    log.info(
+        f"SAVE={cfg['SAVE']}  "
+        f"CLEAR_INPUT={cfg['CLEAR_INPUT']}  "
+        f"CLEAR_OUTPUT={cfg['CLEAR_OUTPUT']}"
+    )
+    log.info(f"Input  : {cfg['INPUT_DIR']}/")
     log.info(f"Output : {run_dir}/")
 
     flow_times: dict[str, float] = {}
@@ -158,12 +197,12 @@ def main() -> int:
     all_queues = [q_f1_f2, q_f2_f3, q_f3_f4, q_f4_f5, q_f5_f6]
 
     thread_defs = [
-        ("F1", flow1_read_input,   (q_f1_f2, flow_times, run_dir)),
-        ("F2", flow2_detect_track, (model_det, q_f1_f2, q_f2_f3, flow_times)),
-        ("F3", flow3_touch_logic,  (q_f2_f3, q_f3_f4, flow_times)),
-        ("F4", flow4_segment,      (model_seg, q_f3_f4, q_f4_f5, flow_times)),
-        ("F5", flow5_longest_path, (q_f4_f5, q_f5_f6, flow_times)),
-        ("F6", flow6_save_results, (q_f5_f6, flow_times)),
+        ("F1", flow1_read_input,   (q_f1_f2, flow_times, run_dir, cfg)),
+        ("F2", flow2_detect_track, (model_det, q_f1_f2, q_f2_f3, flow_times, cfg)),
+        ("F3", flow3_touch_logic,  (q_f2_f3, q_f3_f4, flow_times, cfg)),
+        ("F4", flow4_segment,      (model_seg, q_f3_f4, q_f4_f5, flow_times, cfg)),
+        ("F5", flow5_longest_path, (q_f4_f5, q_f5_f6, flow_times, cfg)),
+        ("F6", flow6_save_results, (q_f5_f6, flow_times, cfg, size_cfg)),
     ]
 
     threads = []

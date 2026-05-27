@@ -1,11 +1,8 @@
 """
 draw_utils.py
-Các hàm vẽ & xuất ảnh debug cho từng bước đo tôm trên băng chuyền.
 
-  save_f3_debug  – Lưu ảnh các khung chạm vạch và frame tốt nhất.
-  save_f4_debug  – Lưu ảnh overlay phân đoạn và crop-mask nhị phân.
-  save_f5_debug  – Lưu ảnh skeleton (medial axis) và đường BFS dài nhất.
-  draw_f6_result – Vẽ ảnh kết quả cuối với nhãn chiều dài (px + mm).
+Các hàm vẽ và xuất ảnh debug cho từng bước đo tôm trên băng chuyền.
+File này chỉ tạo ảnh phụ trợ trong output run, không quyết định kết quả đo.
 """
 
 from pathlib import Path
@@ -13,16 +10,22 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from config import COLOR, CONVEYOR_VERTICAL, SCALE
+from config import COLOR
 from flow_utils import ensure_dir
 from logger_setup import get_logger
 
 
 def get_track_color(track_id: int) -> tuple[int, int, int]:
+    """
+    Chọn màu BGR ổn định cho một track_id.
+
+    Bảng màu được lấy từ config.COLOR và quay vòng khi số ID lớn hơn số màu.
+    """
     return COLOR[(track_id - 1) % len(COLOR)]
 
 
 def _id_dir(run_dir: str, source_stem: str, track_id: int) -> Path:
+    """Tạo và trả về thư mục output/<run>/<source_stem>/ID<track_id>."""
     p = Path(run_dir) / source_stem / f"ID{track_id}"
     ensure_dir(p)
     return p
@@ -35,18 +38,16 @@ def save_f3_debug(
     touch_records: list[dict],
     best_frame_idx: int, best_area: float,
     masked_img: np.ndarray,
-) -> dict:
+) -> dict[str, str | list[str]]:
     """
-    Lưu ảnh khung chạm vạch và ảnh masked tốt nhất.
+    Lưu ảnh debug F3 cho một track.
 
-    Returns:
-        {
-            "f3_best"   : str,        # đường dẫn ảnh F3_Best
-            "f3_touches": [str, ...]  # danh sách đường dẫn ảnh F3_Touch
-        }
+    touch_records là các frame mà bbox chạm vạch tham chiếu. Hàm vẽ bbox lên
+    từng frame touch, lưu ảnh masked tốt nhất đã chọn bởi F3, và trả dict gồm
+    đường dẫn `f3_best` cùng danh sách `f3_touches`.
     """
-    log         = get_logger()
-    out_dir     = _id_dir(run_dir, source_stem, track_id)
+    log = get_logger()
+    out_dir = _id_dir(run_dir, source_stem, track_id)
     track_color = get_track_color(track_id)
     touch_paths: list[str] = []
 
@@ -59,9 +60,9 @@ def save_f3_debug(
             (bx1, max(by1 - 8, 15)),
             cv2.FONT_HERSHEY_SIMPLEX, 0.6, track_color, 2, cv2.LINE_AA,
         )
-        p = str(out_dir / f"F3_Touch_F{rec['frame_idx']}_{rec['area']:.0f}px.jpg")
-        cv2.imwrite(p, canvas)
-        touch_paths.append(p)
+        touch_path = str(out_dir / f"F3_Touch_F{rec['frame_idx']}_{rec['area']:.0f}px.jpg")
+        cv2.imwrite(touch_path, canvas)
+        touch_paths.append(touch_path)
 
     best_path = str(out_dir / f"F3_Best_F{best_frame_idx}_{best_area:.0f}px.jpg")
     cv2.imwrite(best_path, masked_img)
@@ -76,16 +77,16 @@ def save_f4_debug(
     mask_full: np.ndarray,
     seg_xyxy: np.ndarray,
     crop_mask: np.ndarray,
-) -> dict:
+) -> dict[str, str]:
     """
-    Lưu ảnh overlay phân đoạn và crop-mask nhị phân.
+    Lưu ảnh debug F4 cho kết quả segmentation.
 
-    Returns:
-        {"f4_seg": str, "f4_mask": str}
+    Hàm overlay mask đầy đủ lên masked_img, vẽ bbox segmentation và lưu thêm
+    crop mask nhị phân. Dict trả về chứa đường dẫn `f4_seg` và `f4_mask`.
     """
-    log         = get_logger()
-    out_dir     = _id_dir(item["run_dir"], item["source_stem"], item["track_id"])
-    tid, fidx   = item["track_id"], item["frame_idx"]
+    log = get_logger()
+    out_dir = _id_dir(item["run_dir"], item["source_stem"], item["track_id"])
+    tid, fidx = item["track_id"], item["frame_idx"]
     track_color = get_track_color(tid)
 
     seg_vis = item["masked_img"].copy()
@@ -94,17 +95,19 @@ def save_f4_debug(
     cv2.addWeighted(overlay, 0.4, seg_vis, 0.6, 0, seg_vis)
     sx1, sy1, sx2, sy2 = map(int, seg_xyxy)
     cv2.rectangle(seg_vis, (sx1, sy1), (sx2, sy2), track_color, 2)
-    cv2.putText(seg_vis, f"ID:{tid}",
-                (sx1, max(sy1 - 8, 15)),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, track_color, 2, cv2.LINE_AA)
+    cv2.putText(
+        seg_vis, f"ID:{tid}",
+        (sx1, max(sy1 - 8, 15)),
+        cv2.FONT_HERSHEY_SIMPLEX, 0.6, track_color, 2, cv2.LINE_AA,
+    )
 
-    ch, cw   = crop_mask.shape
+    ch, cw = crop_mask.shape
     crop_vis = np.zeros((ch, cw, 3), dtype=np.uint8)
     crop_vis[crop_mask > 0] = (255, 255, 255)
 
-    seg_path  = str(out_dir / f"F4_Seg_F{fidx}.jpg")
+    seg_path = str(out_dir / f"F4_Seg_F{fidx}.jpg")
     mask_path = str(out_dir / f"F4_Mask_F{fidx}.jpg")
-    cv2.imwrite(seg_path,  seg_vis)
+    cv2.imwrite(seg_path, seg_vis)
     cv2.imwrite(mask_path, crop_vis)
 
     log.info(f"[F4-debug] ID {tid}: đã lưu ảnh phân đoạn + mask vùng cắt")
@@ -116,18 +119,18 @@ def save_f5_debug(
     item: dict,
     skeleton: np.ndarray,
     path_mask: np.ndarray,
-) -> dict:
+) -> dict[str, str]:
     """
-    Lưu ảnh trục xương Medial Axis và đường BFS dài nhất.
+    Lưu ảnh debug F5 cho skeleton và đường BFS dài nhất.
 
-    Returns:
-        {"f5_skel": str, "f5_bfs": str}
+    skeleton được vẽ trắng trên nền đen, path_mask được vẽ bằng màu track.
+    Dict trả về chứa đường dẫn `f5_skel` và `f5_bfs`.
     """
-    log            = get_logger()
-    out_dir        = _id_dir(item["run_dir"], item["source_stem"], item["track_id"])
-    tid, fidx      = item["track_id"], item["frame_idx"]
+    log = get_logger()
+    out_dir = _id_dir(item["run_dir"], item["source_stem"], item["track_id"])
+    tid, fidx = item["track_id"], item["frame_idx"]
     skel_h, skel_w = skeleton.shape
-    track_color    = get_track_color(tid)
+    track_color = get_track_color(tid)
 
     ma_vis = np.zeros((skel_h, skel_w, 3), dtype=np.uint8)
     ma_vis[skeleton > 0] = (255, 255, 255)
@@ -136,68 +139,81 @@ def save_f5_debug(
     bfs_vis[path_mask > 0] = track_color
 
     skel_path = str(out_dir / f"F5_Skel_F{fidx}.jpg")
-    bfs_path  = str(out_dir / f"F5_BFS_F{fidx}.jpg")
+    bfs_path = str(out_dir / f"F5_BFS_F{fidx}.jpg")
     cv2.imwrite(skel_path, ma_vis)
-    cv2.imwrite(bfs_path,  bfs_vis)
+    cv2.imwrite(bfs_path, bfs_vis)
 
     log.info(f"[F5-debug] ID {tid}: đã lưu trục giữa (Skel) + đường BFS dài nhất")
     return {"f5_skel": skel_path, "f5_bfs": bfs_path}
 
 
 # F6
-def draw_f6_result(item: dict) -> str:
+def draw_f6_result(item: dict, cfg: dict) -> str:
     """
-    Vẽ ảnh kết quả cuối: đường tham chiếu, overlay tôm, skeleton, nhãn đo.
-    Nhãn chiều dài đơn vị mm (cố định).
+    Vẽ ảnh kết quả cuối cho một con tôm.
 
-    Returns:
-        str  — đường dẫn file ảnh F6_Result đã lưu.
+    item là output từ F5/F6, gồm ảnh gốc, crop mask, path mask, crop box,
+    pixel_length, track_id, frame_idx và thông tin source. Hàm overlay mask,
+    vẽ skeleton, ghi nhãn px/mm theo cfg truyền vào, lưu ảnh F6_Result và
+    trả đường dẫn file đã lưu.
     """
-    log          = get_logger()
+    log = get_logger()
     pixel_length = item["pixel_length"]
-    real_length  = pixel_length * SCALE
-    tid, fidx    = item["track_id"], item["frame_idx"]
-    out_dir      = _id_dir(item["run_dir"], item["source_stem"], tid)
+    real_length = pixel_length * cfg["SCALE"]
+    tid, fidx = item["track_id"], item["frame_idx"]
+    out_dir = _id_dir(item["run_dir"], item["source_stem"], tid)
 
-    canvas           = item["orig_img"].copy()
+    canvas = item["orig_img"].copy()
     h_frame, w_frame = canvas.shape[:2]
-    clr              = get_track_color(tid)
+    clr = get_track_color(tid)
 
     if item.get("lines"):
         for lid, lv in item["lines"].items():
-            if CONVEYOR_VERTICAL:
+            if cfg["CONVEYOR_VERTICAL"]:
                 cv2.line(canvas, (0, lv), (w_frame, lv), COLOR[5], 1)
-                cv2.putText(canvas, str(lid), (4, lv - 6),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLOR[5], 1)
+                cv2.putText(
+                    canvas, str(lid), (4, lv - 6),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLOR[5], 1,
+                )
             else:
                 cv2.line(canvas, (lv, 0), (lv, h_frame), COLOR[5], 1)
-                cv2.putText(canvas, str(lid), (lv + 4, 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLOR[5], 1)
+                cv2.putText(
+                    canvas, str(lid), (lv + 4, 20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLOR[5], 1,
+                )
 
     x1, y1, x2, y2 = item["crop_box"]
-    roi       = canvas[y1:y2, x1:x2]
+    roi = canvas[y1:y2, x1:x2]
     crop_mask = item["crop_mask"]
     path_mask = item["path_mask"]
 
     if crop_mask.shape[:2] != roi.shape[:2]:
-        crop_mask = cv2.resize(crop_mask,
-                               (roi.shape[1], roi.shape[0]),
-                               interpolation=cv2.INTER_NEAREST)
-        path_mask = cv2.resize(path_mask.astype(np.uint8),
-                               (roi.shape[1], roi.shape[0]),
-                               interpolation=cv2.INTER_NEAREST).astype(bool)
+        crop_mask = cv2.resize(
+            crop_mask,
+            (roi.shape[1], roi.shape[0]),
+            interpolation=cv2.INTER_NEAREST,
+        )
+        path_mask = cv2.resize(
+            path_mask.astype(np.uint8),
+            (roi.shape[1], roi.shape[0]),
+            interpolation=cv2.INTER_NEAREST,
+        ).astype(bool)
 
     overlay = roi.copy()
     overlay[crop_mask > 0] = clr
     cv2.addWeighted(overlay, 0.4, roi, 0.6, 0, roi)
     canvas[y1:y2, x1:x2][path_mask > 0] = (255, 255, 255)
 
-    txt    = f"{pixel_length:.1f}px  {real_length:.1f}mm  [ID:{tid}]"
+    txt = f"{pixel_length:.1f}px  {real_length:.1f}mm  [ID:{tid}]"
     tx, ty = int(item["cx_label"]), max(int(item["cy_label"]) - 10, 20)
-    cv2.putText(canvas, txt, (tx, ty),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 4, cv2.LINE_AA)
-    cv2.putText(canvas, txt, (tx, ty),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, clr, 2, cv2.LINE_AA)
+    cv2.putText(
+        canvas, txt, (tx, ty),
+        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 4, cv2.LINE_AA,
+    )
+    cv2.putText(
+        canvas, txt, (tx, ty),
+        cv2.FONT_HERSHEY_SIMPLEX, 0.6, clr, 2, cv2.LINE_AA,
+    )
 
     out_path = str(out_dir / f"F6_Result_F{fidx}_{pixel_length:.0f}px.jpg")
     cv2.imwrite(out_path, canvas)

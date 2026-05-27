@@ -2,6 +2,8 @@
 logger_setup.py
 
 Cấu hình logger dùng chung cho pipeline đo tôm.
+main.py gọi setup_logging() sau khi chuẩn bị OUTPUT_DIR để pipeline.log không
+bị mất khi CLEAR_OUTPUT được bật. Các flow chỉ cần gọi get_logger().
 """
 
 import logging
@@ -15,6 +17,7 @@ _DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 
 def _configure_stdout() -> None:
+    """Đưa stdout về UTF-8 để log tiếng Việt không bị lỗi mã hóa."""
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     except (AttributeError, ValueError):
@@ -22,7 +25,13 @@ def _configure_stdout() -> None:
 
 
 def setup_logging(output_dir: str | Path) -> logging.Logger:
-    """Khởi tạo logger pipeline tại OUTPUT_DIR/pipeline.log."""
+    """
+    Khởi tạo logger pipeline tại output_dir/pipeline.log.
+
+    Logger ghi đồng thời ra stdout và file log, không propagate lên root
+    logger để tránh nhân đôi dòng log. Nếu logger đã có handler, hàm trả lại
+    instance hiện có để không gắn trùng handler.
+    """
     logger = logging.getLogger(_LOGGER_NAME)
     logger.propagate = False
     if logger.handlers:
@@ -49,5 +58,5 @@ def setup_logging(output_dir: str | Path) -> logging.Logger:
 
 
 def get_logger() -> logging.Logger:
-    """Lấy logger pipeline đã được cấu hình bởi main.py."""
+    """Lấy logger pipeline đã được setup_logging() cấu hình trong main.py."""
     return logging.getLogger(_LOGGER_NAME)

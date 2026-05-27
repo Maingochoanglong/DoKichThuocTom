@@ -2,22 +2,39 @@
 size.py
 
 Định nghĩa bảng phân loại kích cỡ tôm theo chiều dài thực tế.
-Các giá trị chỉnh được đọc từ settings.json qua settings_loader.
+Các giá trị chỉnh được đọc từ settings.json qua settings_loader. Hàm phân loại
+nhận cấu hình kích cỡ qua tham số để không phụ thuộc trạng thái module-level.
 """
+
+from typing import Any
 
 from settings_loader import load_setting
 
 
-def load_size_values() -> dict:
-    """Đọc toàn bộ cấu hình kích cỡ và tự ghi default nếu thiếu."""
-    raw_ranges = load_setting(
+# Section trong settings.json dùng cho phân loại kích cỡ.
+SIZE_SECTION = "size"
+
+
+def _load_size(key: str, default: Any) -> Any:
+    """Đọc một key trong section size bằng settings_loader."""
+    return load_setting(key, default, section=SIZE_SECTION)
+
+
+def load_size_values() -> dict[str, Any]:
+    """
+    Đọc toàn bộ cấu hình phân loại kích cỡ từ settings.json.
+
+    Nếu section hoặc key thiếu, settings_loader sẽ ghi default vào file. Hàm
+    trả `SIZE_RANGES` dưới dạng dict nhãn -> tuple float để caller dùng trực
+    tiếp cho phân loại hoặc hiển thị.
+    """
+    raw_ranges = _load_size(
         "SIZE_RANGES",
         {
-            "S": [12, 14],
-            "M": [14, 17],
-            "L": [18, 22],
+            "S": [120, 140],
+            "M": [140, 170],
+            "L": [180, 220],
         },
-        section="size",
     )
 
     return {
@@ -25,42 +42,36 @@ def load_size_values() -> dict:
             str(label): (float(bounds[0]), float(bounds[1]))
             for label, bounds in raw_ranges.items()
         },
-        "UNDERSIZE_LABEL": str(load_setting("UNDERSIZE_LABEL", "Ngoại cỡ nhỏ", section="size")),
-        "OVERSIZE_LABEL": str(load_setting("OVERSIZE_LABEL", "Ngoại cỡ lớn", section="size")),
-        "FALLBACK_LABEL": str(load_setting("FALLBACK_LABEL", "Ngoại cỡ", section="size")),
+        "UNDERSIZE_LABEL": str(_load_size("UNDERSIZE_LABEL", "Ngoại cỡ nhỏ")),
+        "OVERSIZE_LABEL": str(_load_size("OVERSIZE_LABEL", "Ngoại cỡ lớn")),
+        "FALLBACK_LABEL": str(_load_size("FALLBACK_LABEL", "Ngoại cỡ")),
     }
 
 
-_SIZE_VALUES = load_size_values()
-
-# Bảng phân loại kích cỡ: nhãn -> khoảng [từ mm, đến mm).
-SIZE_RANGES: dict[str, tuple[float, float]] = _SIZE_VALUES["SIZE_RANGES"]
-
-# Nhãn cho tôm nhỏ hơn khoảng đầu tiên trong bảng.
-UNDERSIZE_LABEL = _SIZE_VALUES["UNDERSIZE_LABEL"]
-
-# Nhãn cho tôm lớn hơn khoảng cuối cùng trong bảng.
-OVERSIZE_LABEL = _SIZE_VALUES["OVERSIZE_LABEL"]
-
-# Nhãn dự phòng khi chiều dài không khớp với khoảng nào.
-FALLBACK_LABEL = _SIZE_VALUES["FALLBACK_LABEL"]
-
-
-def classify_size(real_length: float) -> str:
+def classify_size(real_length: float, size_cfg: dict[str, Any]) -> str:
     """
     Phân loại tôm theo chiều dài thực tế.
-    Khoảng phân loại dùng dạng nửa mở: lo <= real_length < hi.
+
+    Khoảng phân loại dùng dạng nửa mở: lo <= real_length < hi. Nếu chiều dài
+    nhỏ hơn toàn bộ bảng thì trả nhãn nhỏ, nếu lớn hơn hoặc bằng mốc cuối thì
+    trả nhãn lớn. Khi bảng rỗng hoặc không khớp khoảng nào, hàm trả nhãn dự
+    phòng trong size_cfg.
     """
-    for size_label, (lo, hi) in SIZE_RANGES.items():
+    size_ranges = size_cfg["SIZE_RANGES"]
+    undersize_label = size_cfg["UNDERSIZE_LABEL"]
+    oversize_label = size_cfg["OVERSIZE_LABEL"]
+    fallback_label = size_cfg["FALLBACK_LABEL"]
+
+    for size_label, (lo, hi) in size_ranges.items():
         if lo <= real_length < hi:
             return size_label
 
-    if SIZE_RANGES:
-        min_length = min(lo for lo, _ in SIZE_RANGES.values())
-        max_length = max(hi for _, hi in SIZE_RANGES.values())
+    if size_ranges:
+        min_length = min(lo for lo, _ in size_ranges.values())
+        max_length = max(hi for _, hi in size_ranges.values())
         if real_length < min_length:
-            return UNDERSIZE_LABEL
+            return undersize_label
         if real_length >= max_length:
-            return OVERSIZE_LABEL
+            return oversize_label
 
-    return FALLBACK_LABEL
+    return fallback_label

@@ -1,3 +1,5 @@
+// State, constants, DOM helper
+
 const state = {
   config: null,
   sizes: null,
@@ -33,7 +35,9 @@ const state = {
 const $ = (id) => document.getElementById(id);
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
+
 const RUNNING_LOCKED_TABS = new Set(["configTab", "sizesTab"]);
+
 let pagerResizeTimer = null;
 
 const heroIcon = (paths, width = "1.5") => (
@@ -58,6 +62,29 @@ const icons = {
   check: heroIcon(["m4.5 12.75 6 6 9-13.5"], "1.8"),
 };
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes)) return "--";
+  const units = ["B", "KB", "MB", "GB"];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
+}
+
+// API helper
+
 async function requestJson(url, options = {}) {
   const response = await fetch(url, options);
   const payload = await response.json().catch(() => ({}));
@@ -74,6 +101,8 @@ function sendJson(url, method, body) {
     body: JSON.stringify(body),
   });
 }
+
+// Modal, toast, tab, trạng thái running
 
 function getFocusableElements(container) {
   return [...container.querySelectorAll([
@@ -274,26 +303,48 @@ function handleSettingsWarnings(payload, options = {}) {
   return showSettingsWarnings(payload?.warnings, options);
 }
 
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function setRunning(running) {
+  state.running = running;
+  document.body.classList.toggle("is-running", running);
+  document.querySelectorAll("[data-tab-target]").forEach((button) => {
+    button.disabled = running && RUNNING_LOCKED_TABS.has(button.dataset.tabTarget);
+  });
+  if (running && RUNNING_LOCKED_TABS.has(state.activeTab)) {
+    activateTab("dataTab");
+  }
+
+  const runBtn = $("runBtn");
+  runBtn.disabled = running;
+  runBtn.classList.toggle("run-active", running);
+  runBtn.innerHTML = running
+    ? `<span class="spinner-border" aria-hidden="true"></span> Đang đo`
+    : `${icons.play} Bắt đầu đo`;
+
+  ["scaleModeBtn", "applyScaleBtn", "cancelScaleBtn", "scaleImportBtn"].forEach((id) => {
+    const button = $(id);
+    if (button) button.disabled = running || state.scaleImporting;
+  });
+  if ($("scaleImportInput")) $("scaleImportInput").disabled = running || state.scaleImporting;
+
+  $("fileInput").disabled = running || state.uploading;
+  $("folderInput").disabled = running || state.uploading;
+  ["chooseFileBtn", "chooseFolderBtn"].forEach((id) => {
+    const button = $(id);
+    if (button) button.disabled = running || state.uploading;
+  });
+  $("dropZone").classList.toggle("disabled", running || state.uploading);
+  document.querySelectorAll("#configForm input, #configForm button, #sizeForm input, #sizeForm button")
+    .forEach((node) => {
+      node.disabled = running;
+    });
+
+  const status = $("pipelineStatus");
+  status.classList.toggle("running", running);
+  status.classList.remove("error");
+  status.textContent = running ? "Đang chạy" : "Sẵn sàng";
 }
 
-function formatBytes(bytes) {
-  if (!Number.isFinite(bytes)) return "--";
-  const units = ["B", "KB", "MB", "GB"];
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
-}
+// Pagination helper
 
 function clampPage(page, totalPages) {
   return Math.min(Math.max(1, Number(page) || 1), Math.max(1, totalPages || 1));
@@ -381,16 +432,15 @@ function renderPageNumbers(containerId, currentPage, totalPages, onClick) {
   });
 }
 
-function imageFileName(url) {
-  const clean = String(url || "").split(/[?#]/)[0];
-  const fileName = clean.split("/").filter(Boolean).at(-1);
-  if (!fileName) return "";
-  try {
-    return decodeURIComponent(fileName);
-  } catch (_error) {
-    return fileName;
-  }
+function rerenderPagersForViewport() {
+  window.clearTimeout(pagerResizeTimer);
+  pagerResizeTimer = window.setTimeout(() => {
+    renderInputFiles();
+    renderCurrentResults();
+  }, 120);
 }
+
+// Config và size settings
 
 function updateConfidenceLabels() {
   const det = $("cfg_CONF_DET");
@@ -403,131 +453,6 @@ function updateConfidenceLabels() {
 
 function isConfidenceKey(key) {
   return key === "CONF_DET" || key === "CONF_SEG";
-}
-
-function setRunning(running) {
-  state.running = running;
-  document.body.classList.toggle("is-running", running);
-  document.querySelectorAll("[data-tab-target]").forEach((button) => {
-    button.disabled = running && RUNNING_LOCKED_TABS.has(button.dataset.tabTarget);
-  });
-  if (running && RUNNING_LOCKED_TABS.has(state.activeTab)) {
-    activateTab("dataTab");
-  }
-
-  const runBtn = $("runBtn");
-  runBtn.disabled = running;
-  runBtn.classList.toggle("run-active", running);
-  runBtn.innerHTML = running
-    ? `<span class="spinner-border" aria-hidden="true"></span> Đang đo`
-    : `${icons.play} Bắt đầu đo`;
-
-  ["scaleModeBtn", "applyScaleBtn", "cancelScaleBtn", "scaleImportBtn"].forEach((id) => {
-    const button = $(id);
-    if (button) button.disabled = running || state.scaleImporting;
-  });
-  if ($("scaleImportInput")) $("scaleImportInput").disabled = running || state.scaleImporting;
-
-  $("fileInput").disabled = running || state.uploading;
-  $("folderInput").disabled = running || state.uploading;
-  ["chooseFileBtn", "chooseFolderBtn"].forEach((id) => {
-    const button = $(id);
-    if (button) button.disabled = running || state.uploading;
-  });
-  $("dropZone").classList.toggle("disabled", running || state.uploading);
-  document.querySelectorAll("#configForm input, #configForm button, #sizeForm input, #sizeForm button")
-    .forEach((node) => {
-      node.disabled = running;
-    });
-
-  const status = $("pipelineStatus");
-  status.classList.toggle("running", running);
-  status.classList.remove("error");
-  status.textContent = running ? "Đang chạy" : "Sẵn sàng";
-}
-
-function updateStatusView(status) {
-  const running = Boolean(status.running);
-  setRunning(running);
-  const statusEl = $("pipelineStatus");
-  if (!running && status.returncode !== null && status.returncode !== 0) {
-    statusEl.classList.add("error");
-    statusEl.textContent = `Lỗi ${status.returncode}`;
-  } else {
-    statusEl.textContent = running ? "Đang chạy" : "Sẵn sàng";
-  }
-}
-
-async function refreshStatus() {
-  try {
-    const status = await requestJson("/api/pipeline/status");
-    const wasRunning = state.running;
-    updateStatusView(status);
-    if (status.running) {
-      await pollLog();
-    }
-    if (wasRunning && !status.running) {
-      await pollLog();
-      await loadRuns({ preferLatest: true });
-      await loadResults();
-      if (status.returncode === 0) {
-        activateTab("resultsTab");
-      } else {
-        activateTab("logTab");
-      }
-      toast(status.returncode === 0 ? "Pipeline đã chạy xong, đã mở tab Kết Quả" : "Pipeline dừng với lỗi, đã mở tab LOG", status.returncode === 0 ? "success" : "error");
-    }
-    if (status.running) {
-      startStatusPolling();
-    } else {
-      stopStatusPolling();
-    }
-  } catch (error) {
-    stopStatusPolling();
-    toast(error.message, "error");
-  }
-}
-
-function startStatusPolling() {
-  if (state.statusTimer) return;
-  state.statusTimer = window.setTimeout(async () => {
-    state.statusTimer = null;
-    await refreshStatus();
-  }, 1500);
-}
-
-function stopStatusPolling() {
-  if (!state.statusTimer) return;
-  window.clearTimeout(state.statusTimer);
-  state.statusTimer = null;
-}
-
-function appendLog(content) {
-  if (!content) return;
-  const logBody = $("logBody");
-  const lines = content.split(/\r?\n/);
-  lines.forEach((line, index) => {
-    if (!line && index === lines.length - 1) return;
-    const div = document.createElement("div");
-    div.className = "log-line";
-    if (line.includes("[ERROR]") || line.toLowerCase().includes("error")) {
-      div.classList.add("error");
-    } else if (line.includes("[WARNING]") || line.toLowerCase().includes("warning")) {
-      div.classList.add("warning");
-    }
-    div.textContent = line;
-    logBody.appendChild(div);
-  });
-  logBody.scrollTop = logBody.scrollHeight;
-}
-
-async function pollLog() {
-  const payload = await requestJson(`/api/pipeline/log?offset=${state.logOffset}`);
-  if (payload.offset < state.logOffset) {
-    $("logBody").textContent = "";
-  }
-  state.logOffset = payload.offset;
-  appendLog(payload.content);
 }
 
 // Cập nhật accept attribute cho input file/folder dựa trên IMG_EXTS và VID_EXTS từ config.
@@ -564,14 +489,6 @@ async function loadConfig() {
   const payload = await requestJson("/api/config");
   handleSettingsWarnings(payload);
   applyConfig(payload.config || payload);
-}
-
-function rerenderPagersForViewport() {
-  window.clearTimeout(pagerResizeTimer);
-  pagerResizeTimer = window.setTimeout(() => {
-    renderInputFiles();
-    renderCurrentResults();
-  }, 120);
 }
 
 function collectConfig() {
@@ -719,6 +636,8 @@ async function saveSizes(event) {
     toast(error.message, "error");
   }
 }
+
+// Upload và input files
 
 function setUploadProgress({ visible = true, percent = 0, text = "" } = {}) {
   const box = $("uploadProgress");
@@ -874,6 +793,92 @@ async function deleteInputFile(name) {
   }
 }
 
+// Pipeline status và log polling
+
+function updateStatusView(status) {
+  const running = Boolean(status.running);
+  setRunning(running);
+  const statusEl = $("pipelineStatus");
+  if (!running && status.returncode !== null && status.returncode !== 0) {
+    statusEl.classList.add("error");
+    statusEl.textContent = `Lỗi ${status.returncode}`;
+  } else {
+    statusEl.textContent = running ? "Đang chạy" : "Sẵn sàng";
+  }
+}
+
+async function refreshStatus() {
+  try {
+    const status = await requestJson("/api/pipeline/status");
+    const wasRunning = state.running;
+    updateStatusView(status);
+    if (status.running) {
+      await pollLog();
+    }
+    if (wasRunning && !status.running) {
+      await pollLog();
+      await loadRuns({ preferLatest: true });
+      await loadResults();
+      if (status.returncode === 0) {
+        activateTab("resultsTab");
+      } else {
+        activateTab("logTab");
+      }
+      toast(status.returncode === 0 ? "Pipeline đã chạy xong, đã mở tab Kết Quả" : "Pipeline dừng với lỗi, đã mở tab LOG", status.returncode === 0 ? "success" : "error");
+    }
+    if (status.running) {
+      startStatusPolling();
+    } else {
+      stopStatusPolling();
+    }
+  } catch (error) {
+    stopStatusPolling();
+    toast(error.message, "error");
+  }
+}
+
+function startStatusPolling() {
+  if (state.statusTimer) return;
+  state.statusTimer = window.setTimeout(async () => {
+    state.statusTimer = null;
+    await refreshStatus();
+  }, 1500);
+}
+
+function stopStatusPolling() {
+  if (!state.statusTimer) return;
+  window.clearTimeout(state.statusTimer);
+  state.statusTimer = null;
+}
+
+function appendLog(content) {
+  if (!content) return;
+  const logBody = $("logBody");
+  const lines = content.split(/\r?\n/);
+  lines.forEach((line, index) => {
+    if (!line && index === lines.length - 1) return;
+    const div = document.createElement("div");
+    div.className = "log-line";
+    if (line.includes("[ERROR]") || line.toLowerCase().includes("error")) {
+      div.classList.add("error");
+    } else if (line.includes("[WARNING]") || line.toLowerCase().includes("warning")) {
+      div.classList.add("warning");
+    }
+    div.textContent = line;
+    logBody.appendChild(div);
+  });
+  logBody.scrollTop = logBody.scrollHeight;
+}
+
+async function pollLog() {
+  const payload = await requestJson(`/api/pipeline/log?offset=${state.logOffset}`);
+  if (payload.offset < state.logOffset) {
+    $("logBody").textContent = "";
+  }
+  state.logOffset = payload.offset;
+  appendLog(payload.content);
+}
+
 async function confirmPipelineDataDeletion() {
   const formConfig = collectConfig();
   const config = state.config || formConfig;
@@ -934,24 +939,17 @@ async function runPipeline() {
   }
 }
 
-async function loadRuns({ preferLatest = false } = {}) {
-  const payload = await requestJson("/api/results/runs");
-  const select = $("runSelect");
-  const previous = state.selectedRun || select.value;
-  select.innerHTML = "";
-  if (!payload.runs.length) {
-    select.innerHTML = `<option value="">Chưa có run</option>`;
-    state.selectedRun = "";
-    return;
+// Results rendering
+
+function imageFileName(url) {
+  const clean = String(url || "").split(/[?#]/)[0];
+  const fileName = clean.split("/").filter(Boolean).at(-1);
+  if (!fileName) return "";
+  try {
+    return decodeURIComponent(fileName);
+  } catch (_error) {
+    return fileName;
   }
-  payload.runs.forEach((run) => {
-    const option = document.createElement("option");
-    option.value = run.name;
-    option.textContent = `${run.name} · ${run.shrimp_count} tôm`;
-    select.appendChild(option);
-  });
-  state.selectedRun = !preferLatest && payload.runs.some((run) => run.name === previous) ? previous : payload.runs[0].name;
-  select.value = state.selectedRun;
 }
 
 function updateSizeFilter(sources) {
@@ -983,6 +981,26 @@ function flattenImages(images) {
     }
   });
   return list;
+}
+
+async function loadRuns({ preferLatest = false } = {}) {
+  const payload = await requestJson("/api/results/runs");
+  const select = $("runSelect");
+  const previous = state.selectedRun || select.value;
+  select.innerHTML = "";
+  if (!payload.runs.length) {
+    select.innerHTML = `<option value="">Chưa có run</option>`;
+    state.selectedRun = "";
+    return;
+  }
+  payload.runs.forEach((run) => {
+    const option = document.createElement("option");
+    option.value = run.name;
+    option.textContent = `${run.name} · ${run.shrimp_count} tôm`;
+    select.appendChild(option);
+  });
+  state.selectedRun = !preferLatest && payload.runs.some((run) => run.name === previous) ? previous : payload.runs[0].name;
+  select.value = state.selectedRun;
 }
 
 async function loadResults() {
@@ -1140,6 +1158,8 @@ function renderResults(data) {
   });
 }
 
+// Scale calibration
+
 function updateScaleControls() {
   document.querySelector(".result-panel")?.classList.toggle("scale-mode", state.scaleMode);
   setHidden($("scaleModeBtn"), state.scaleMode);
@@ -1291,6 +1311,8 @@ async function applyScale() {
   }
 }
 
+// Image modal/viewer
+
 function applyImageTransform() {
   const image = $("modalImage");
   if (!image) return;
@@ -1415,6 +1437,8 @@ function openImageModal(bundle) {
   if (bundle.images.length) showModalImage(0);
   showModal("imageModal");
 }
+
+// Event binding và init
 
 function bindModalEvents() {
   document.querySelectorAll("[data-modal-close]").forEach((button) => {

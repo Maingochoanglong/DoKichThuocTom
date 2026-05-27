@@ -27,7 +27,7 @@
         --color-console-text: #a3e635;
       }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260527-tailwind-pagination">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260527-js-font-default">
   </head>
   <body class="min-h-screen overflow-x-hidden bg-shop-floor text-ink antialiased">
     <a class="skip-link" href="#dataTab">Bỏ qua đầu trang</a>
@@ -182,7 +182,7 @@
               </div>
 
               <div class="scale-help" id="scaleHelp" role="status" hidden>
-                Để hiệu chuẩn, nhập chiều dài thật của mẫu vào cột <strong>mm thực tế</strong>. Bạn cũng có thể nạp file CSV/Excel chỉ chứa duy nhất 1 cột giá trị theo đúng thứ tự hiển thị để tự động điền nhanh, sau đó bấm <strong>Lưu scale</strong>.
+                Để hiệu chuẩn, nhập chiều dài thật của mẫu vào cột <strong>mm thực tế</strong>. Bạn cũng có thể nạp file CSV/Excel đúng 1 cột, dòng đầu là header <strong>mm</strong>, các dòng dưới là giá trị mm theo đúng thứ tự hiển thị để tự động điền nhanh, sau đó bấm <strong>Lưu scale</strong>.
               </div>
 
               <div class="result-summary" id="resultSummary">
@@ -495,6 +495,6 @@
       </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260527-tailwind-pagination"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260527-js-font-default"></script>
   </body>
 </html>
