@@ -33,7 +33,7 @@ COLOR = [
 ]
 
 # Số item tối đa trong queue giữa các flow xử lý.
-QUEUE_SIZE = 64
+QUEUE_SIZE = 16
 
 # Đường dẫn model phát hiện tôm.
 MODEL_DET = "model/yolov8n_det_v6_openvino_model"
