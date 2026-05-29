@@ -48,6 +48,7 @@ def flow1_read_input(
     input_dir = cfg["INPUT_DIR"]
     target_fps = cfg["TARGET_FPS"]
     conveyor_vertical = cfg["CONVEYOR_VERTICAL"]
+    line_gap_ratio = cfg["LINE_GAP_RATIO"]
     img_exts = set(cfg["IMG_EXTS"])
     vid_exts = set(cfg["VID_EXTS"])
     input_path = Path(input_dir)
@@ -85,7 +86,7 @@ def flow1_read_input(
         fps = info.fps or 30.0
         step = max(1, round(fps / target_fps)) if target_fps > 0 else 1
         frame_dim = info.height if conveyor_vertical else info.width
-        lines = get_lines(frame_dim)
+        lines = get_lines(frame_dim, line_gap_ratio)
 
         log.info(
             f"[F1] Đọc video: {fpath.name} | "
@@ -204,11 +205,17 @@ def flow3_touch_logic(q_f2_f3, q_f3_f4, flow_times: FlowTimes, cfg: dict) -> Non
     conveyor_vertical = cfg["CONVEYOR_VERTICAL"]
     save_debug = cfg["SAVE"]
     touch_threshold = cfg["TOUCH_THRESHOLD"]
+    required_touches = cfg["REQUIRE_TOUCH"]
     active_tracks = {}
     completed_tracks = set()
     current_video = None
     current_lines = {}
     current_run_dir = ""
+
+    def has_required_touches(track_data: dict, lines: dict) -> bool:
+        """Kiểm tra track đã chạm đủ số vạch tham chiếu hiện có chưa."""
+        required_count = min(required_touches, len(lines))
+        return len(track_data["lines_touched"]) >= required_count
 
     def flush_track_to_f4(
         track_id: int,
@@ -218,6 +225,8 @@ def flow3_touch_logic(q_f2_f3, q_f3_f4, flow_times: FlowTimes, cfg: dict) -> Non
         lines: dict,
         run_dir: str,
     ) -> None:
+        if lines and not has_required_touches(track_data, lines):
+            return
         if track_data["best_frame"] is None:
             return
         masked = get_masked_image(track_data["best_frame"], track_data["best_box_xyxy"], bbox_pad)
@@ -342,7 +351,7 @@ def flow3_touch_logic(q_f2_f3, q_f3_f4, flow_times: FlowTimes, cfg: dict) -> Non
                     track_data["best_frame_idx"] = frame_idx
                     track_data["best_area"] = area
 
-            if len(track_data["lines_touched"]) == 3:
+            if has_required_touches(track_data, lines):
                 flush_track_to_f4(
                     track_id,
                     track_data,

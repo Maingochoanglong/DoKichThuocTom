@@ -473,10 +473,24 @@ function updateConfidenceLabels() {
   $("confSegValue").textContent = `${seg.value}%`;
   det.setAttribute("aria-valuetext", `${det.value}%`);
   seg.setAttribute("aria-valuetext", `${seg.value}%`);
+
+  const lineGap = $("cfg_LINE_GAP_RATIO");
+  const lineGapValue = $("lineGapValue");
+  if (lineGap && lineGapValue) {
+    lineGapValue.textContent = `${lineGap.value}%`;
+    lineGap.setAttribute("aria-valuetext", `${lineGap.value}%`);
+  }
+
+  const requireTouch = $("cfg_REQUIRE_TOUCH");
+  const requireTouchValue = $("requireTouchValue");
+  if (requireTouch && requireTouchValue) {
+    requireTouchValue.textContent = `${requireTouch.value} vạch`;
+    requireTouch.setAttribute("aria-valuetext", `${requireTouch.value} vạch`);
+  }
 }
 
-function isConfidenceKey(key) {
-  return key === "CONF_DET" || key === "CONF_SEG";
+function isPercentSliderKey(key) {
+  return key === "CONF_DET" || key === "CONF_SEG" || key === "LINE_GAP_RATIO";
 }
 
 // Cập nhật accept attribute cho input file/folder dựa trên IMG_EXTS và VID_EXTS từ config.
@@ -498,7 +512,7 @@ function applyConfig(config) {
     if (!input) return;
     if (input.type === "checkbox") {
       input.checked = Boolean(value);
-    } else if (isConfidenceKey(key)) {
+    } else if (isPercentSliderKey(key)) {
       input.value = Math.round(Number(value) * 100);
     } else {
       input.value = value;
@@ -521,9 +535,9 @@ function collectConfig() {
     const key = input.id.slice("cfg_".length);
     if (input.type === "checkbox") {
       payload[key] = input.checked;
-    } else if (isConfidenceKey(key)) {
+    } else if (isPercentSliderKey(key)) {
       payload[key] = Number(input.value) / 100;
-    } else if (input.type === "number") {
+    } else if (input.type === "number" || input.type === "range") {
       const valStr = input.value.trim();
       const numVal = Number(input.value);
       if (valStr === "" || Number.isNaN(numVal)) {
@@ -1605,7 +1619,7 @@ function bindEvents() {
     }
     button.closest("tr")?.remove();
   });
-  ["cfg_CONF_DET", "cfg_CONF_SEG"].forEach((id) => {
+  ["cfg_CONF_DET", "cfg_CONF_SEG", "cfg_LINE_GAP_RATIO", "cfg_REQUIRE_TOUCH"].forEach((id) => {
     $(id).addEventListener("input", updateConfidenceLabels);
   });
   $("runBtn").addEventListener("click", runPipeline);

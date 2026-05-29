@@ -27,7 +27,7 @@
         --color-console-text: #a3e635;
       }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260527-settings-preflight">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=20260529-range-ticks">
   </head>
   <body class="min-h-screen overflow-x-hidden bg-shop-floor text-ink antialiased">
     <a class="skip-link" href="#dataTab">Bỏ qua đầu trang</a>
@@ -267,16 +267,51 @@
                         <input class="form-control" id="cfg_TOUCH_THRESHOLD" type="number" step="any" min="0" inputmode="decimal">
                         <div class="form-help">Khoảng dung sai khi xét tôm chạm vạch biên. Giá trị lớn hơn sẽ dễ tính là chạm vạch hơn.</div>
                       </div>
+
                     </div>
                   </section>
 
                   <section class="config-block">
                     <div class="config-block-head">
                       <h3>Video</h3>
-                      <p>Chọn cách đọc video và hướng di chuyển của tôm trong khung hình.</p>
+                      <p>Chọn cách đọc video, hướng di chuyển và điều kiện chạm vạch tham chiếu.</p>
                     </div>
                     <div class="config-grid config-video-grid">
-                      <div class="min-w-0 config-video-main">
+                      <div class="min-w-0 config-range-field">
+                        <div class="flex min-w-0 items-center justify-between gap-1.5">
+                          <label class="form-label" for="cfg_LINE_GAP_RATIO">LINE_GAP_RATIO</label>
+                          <span class="config-value" id="lineGapValue">--%</span>
+                        </div>
+                        <div class="range-with-ticks">
+                          <input class="form-range" id="cfg_LINE_GAP_RATIO" type="range" min="10" max="50" step="10">
+                          <div class="range-ticks range-ticks-5" aria-hidden="true">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </div>
+                        </div>
+                        <div class="form-help">Tỉ lệ khoảng cách từ vạch giữa ra hai vạch biên, tính trên nửa chiều di chuyển.</div>
+                      </div>
+
+                      <div class="min-w-0 config-range-field">
+                        <div class="flex min-w-0 items-center justify-between gap-1.5">
+                          <label class="form-label" for="cfg_REQUIRE_TOUCH">REQUIRE_TOUCH</label>
+                          <span class="config-value" id="requireTouchValue">-- vạch</span>
+                        </div>
+                        <div class="range-with-ticks">
+                          <input class="form-range" id="cfg_REQUIRE_TOUCH" type="range" min="1" max="3" step="1">
+                          <div class="range-ticks range-ticks-3" aria-hidden="true">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </div>
+                        </div>
+                        <div class="form-help">Số vạch tôm bắt buộc phải chạm trước khi được chuyển sang bước phân đoạn.</div>
+                      </div>
+
+                      <div class="min-w-0 config-video-main config-number-field">
                         <label class="form-label" for="cfg_TARGET_FPS">TARGET_FPS</label>
                         <input class="form-control" id="cfg_TARGET_FPS" type="number" step="any" min="0" inputmode="decimal">
                         <div class="form-help">Số frame lấy mỗi giây từ video. Nhập 0 để xử lý toàn bộ frame.</div>

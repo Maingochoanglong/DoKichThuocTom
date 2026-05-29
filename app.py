@@ -46,10 +46,13 @@ app.json.ensure_ascii = False
 
 CONFIG_KEYS = [
     "INPUT_DIR", "OUTPUT_DIR", "CLEAR_OUTPUT", "CLEAR_INPUT", "CHUNK_MODE",
-    "SCALE", "CONF_DET", "CONF_SEG", "BBOX_PAD", "TOUCH_THRESHOLD",
+    "SCALE", "CONF_DET", "CONF_SEG", "BBOX_PAD", "LINE_GAP_RATIO", "TOUCH_THRESHOLD",
     "TARGET_FPS", "CONVEYOR_VERTICAL", "SAVE",
+    "REQUIRE_TOUCH",
 ]
-BOOL_KEYS = {"CLEAR_OUTPUT", "CLEAR_INPUT", "CHUNK_MODE", "CONVEYOR_VERTICAL", "SAVE"}
+BOOL_KEYS = {
+    "CLEAR_OUTPUT", "CLEAR_INPUT", "CHUNK_MODE", "CONVEYOR_VERTICAL", "SAVE",
+}
 
 RESULT_COLS = ["run", "source_file", "track_id", "frame_idx", "pixel_length", "real_length_mm", "size"]
 MAX_SCALE_BYTE = 4 * 1024 * 1024
@@ -156,6 +159,7 @@ def _validate_config(raw: dict) -> dict:
         ("SCALE",           1e-5, None),
         ("CONF_DET",        0.0,  1.0),
         ("CONF_SEG",        0.0,  1.0),
+        ("LINE_GAP_RATIO",  0.1,  0.5),
         ("TOUCH_THRESHOLD", 0.0,  None),
         ("TARGET_FPS",      0.0,  None),
     ]:
@@ -176,6 +180,14 @@ def _validate_config(raw: dict) -> dict:
         data["BBOX_PAD"] = v
     except (ValueError, TypeError):
         raise ValueError("BBOX_PAD phải là số nguyên không âm")
+
+    try:
+        v = int(data["REQUIRE_TOUCH"])
+        if v < 1 or v > 3:
+            raise ValueError
+        data["REQUIRE_TOUCH"] = v
+    except (ValueError, TypeError):
+        raise ValueError("REQUIRE_TOUCH phải là số nguyên từ 1 đến 3")
 
     return data
 

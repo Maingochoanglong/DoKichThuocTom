@@ -16,19 +16,20 @@ def ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
-def get_lines(frame_dim: int) -> dict[int, int]:
+def get_lines(frame_dim: int, gap_ratio: float = 0.1) -> dict[int, int]:
     """
     Tính 3 vạch tham chiếu cách đều quanh tâm frame.
 
     frame_dim là width khi băng chuyền ngang hoặc height khi băng chuyền dọc.
+    gap_ratio là tỉ lệ tính trên nửa frame từ vạch giữa ra biên.
     Kết quả dùng key 0, 1, 2 để F3 kiểm tra tôm đã đi qua đủ vạch.
     """
     center = frame_dim // 2
-    gap_px = int(0.1 * frame_dim)
+    gap_px = int((frame_dim / 2) * gap_ratio)
     return {0: center - gap_px, 1: center, 2: center + gap_px}
 
 
-def box_touches_line(center: float, line_coord: int, threshold: int) -> bool:
+def box_touches_line(center: float, line_coord: int, threshold: float) -> bool:
     """Kiểm tra tâm bbox có nằm trong ngưỡng chạm vạch tham chiếu không."""
     return abs(center - line_coord) <= threshold
 
