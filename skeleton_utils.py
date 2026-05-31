@@ -12,7 +12,6 @@ from collections import deque
 import numpy as np
 
 
-Point = tuple[int, int]
 DIRECTIONS = (
     (-1, 0),
     (1, 0),
@@ -26,7 +25,10 @@ DIRECTIONS = (
 SQRT2 = math.sqrt(2)
 
 
-def _bfs(skeleton: np.ndarray, start: Point) -> tuple[Point, dict[Point, Point]]:
+def _bfs(
+    skeleton: np.ndarray,
+    start: tuple[int, int],
+) -> tuple[tuple[int, int], dict[tuple[int, int], tuple[int, int]]]:
     """
     Duyệt skeleton từ start bằng BFS trên 8 hướng.
 
@@ -35,7 +37,7 @@ def _bfs(skeleton: np.ndarray, start: Point) -> tuple[Point, dict[Point, Point]]
     """
     h, w = skeleton.shape
     visited = np.zeros((h, w), dtype=bool)
-    parent: dict[Point, Point] = {}
+    parent: dict[tuple[int, int], tuple[int, int]] = {}
 
     q = deque([start])
     visited[start] = True
@@ -67,7 +69,7 @@ def find_longest_path(skeleton: np.ndarray) -> tuple[np.ndarray, float]:
     if not skeleton.any():
         return np.zeros_like(skeleton, dtype=bool), 0.0
 
-    start: Point = tuple(np.argwhere(skeleton)[0])
+    start: tuple[int, int] = tuple(np.argwhere(skeleton)[0])
     point_a, _ = _bfs(skeleton, start)
     point_b, parent = _bfs(skeleton, point_a)
 

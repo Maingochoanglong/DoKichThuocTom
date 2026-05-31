@@ -89,6 +89,7 @@ def _safe_thread(
     target,
     args: tuple,
     thread_name: str,
+    stop_event: threading.Event,
     error_info: list,
     error_lock: threading.Lock,
     all_queues: list[Queue],
@@ -106,6 +107,7 @@ def _safe_thread(
         tb = traceback.format_exc()
         with error_lock:
             error_info.append((thread_name, exc, tb))
+        stop_event.set()
         for q in all_queues:
             _force_put_sentinel(q)
 
@@ -199,6 +201,7 @@ def main() -> int:
     flow_times: dict[str, float] = {}
     error_info: list[tuple] = []
     error_lock = threading.Lock()
+    stop_event = threading.Event()
 
     q_f1_f2 = Queue(maxsize=QUEUE_SIZE)
     q_f2_f3 = Queue(maxsize=QUEUE_SIZE)
@@ -208,19 +211,19 @@ def main() -> int:
     all_queues = [q_f1_f2, q_f2_f3, q_f3_f4, q_f4_f5, q_f5_f6]
 
     thread_defs = [
-        ("F1", flow1_read_input,   (q_f1_f2, flow_times, run_dir, cfg)),
-        ("F2", flow2_detect_track, (model_det, q_f1_f2, q_f2_f3, flow_times, cfg)),
-        ("F3", flow3_touch_logic,  (q_f2_f3, q_f3_f4, flow_times, cfg)),
-        ("F4", flow4_segment,      (model_seg, q_f3_f4, q_f4_f5, flow_times, cfg)),
-        ("F5", flow5_longest_path, (q_f4_f5, q_f5_f6, flow_times, cfg)),
-        ("F6", flow6_save_results, (q_f5_f6, flow_times, cfg, size_cfg)),
+        ("F1", flow1_read_input,   (q_f1_f2, flow_times, run_dir, cfg, stop_event)),
+        ("F2", flow2_detect_track, (model_det, q_f1_f2, q_f2_f3, flow_times, cfg, stop_event)),
+        ("F3", flow3_touch_logic,  (q_f2_f3, q_f3_f4, flow_times, cfg, stop_event)),
+        ("F4", flow4_segment,      (model_seg, q_f3_f4, q_f4_f5, flow_times, cfg, stop_event)),
+        ("F5", flow5_longest_path, (q_f4_f5, q_f5_f6, flow_times, cfg, stop_event)),
+        ("F6", flow6_save_results, (q_f5_f6, flow_times, cfg, size_cfg, stop_event)),
     ]
 
     threads = []
     for name, target, args in thread_defs:
         t = threading.Thread(
             target=_safe_thread,
-            args=(target, args, name, error_info, error_lock, all_queues),
+            args=(target, args, name, stop_event, error_info, error_lock, all_queues),
             name=name,
             daemon=True,
         )
