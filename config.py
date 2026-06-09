@@ -33,7 +33,7 @@ COLOR = [
 ]
 
 # Số item tối đa trong queue giữa các flow xử lý.
-QUEUE_SIZE = 16
+QUEUE_SIZE = 0
 
 # Đường dẫn model phát hiện tôm.
 MODEL_DET = "model/yolov8n_det_v6_openvino_model"
@@ -68,8 +68,8 @@ def load_config_values() -> dict[str, Any]:
         "CONF_DET": float(_load_config("CONF_DET", 0.5)),
         "CONF_SEG": float(_load_config("CONF_SEG", 0.5)),
         "BBOX_PAD": int(_load_config("BBOX_PAD", 5)),
-        "LINE_GAP_RATIO": float(_load_config("LINE_GAP_RATIO", 0.1)),
-        "TOUCH_THRESHOLD": float(_load_config("TOUCH_THRESHOLD", 10.0)),
+        "LINE_GAP_RATIO": float(_load_config("LINE_GAP_RATIO", 0.2)),
+        "TOUCH_THRESHOLD": float(_load_config("TOUCH_THRESHOLD", 15.0)),
         "REQUIRE_TOUCH": int(_load_config("REQUIRE_TOUCH", 3)),
         "TARGET_FPS": float(_load_config("TARGET_FPS", 0.0)),
         "CONVEYOR_VERTICAL": bool(_load_config("CONVEYOR_VERTICAL", False)),

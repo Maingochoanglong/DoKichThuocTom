@@ -56,7 +56,136 @@ def _get_queue(q, stop_event):
             pass
 
 
-# F1: Đọc input
+# Hàm con F1
+def _flow1_should_stop(stop_event, log, stop_state: dict[str, bool]) -> bool:
+    """Kiểm tra tín hiệu dừng và chỉ ghi log dừng một lần."""
+    if not _stop_requested(stop_event):
+        return False
+    if not stop_state["logged"]:
+        log.info("[F1] Nhận tín hiệu dừng do flow khác lỗi, ngừng đọc input.")
+        stop_state["logged"] = True
+    return True
+
+
+def _flow1_push_image(
+    fpath: Path,
+    q_f1_f2,
+    run_dir: str,
+    stop_event,
+    log,
+    stop_state: dict[str, bool],
+) -> bool:
+    """Đọc một ảnh và đẩy item ảnh sang F2."""
+    if _flow1_should_stop(stop_event, log, stop_state):
+        return False
+    image = cv2.imread(str(fpath))
+    if image is None:
+        log.warning(f"[F1] Bỏ qua '{fpath.name}' - lỗi đọc ảnh")
+        return True
+    pushed = _put_queue(q_f1_f2, {
+        "type": "image",
+        "path": fpath,
+        "source_file": fpath.name,
+        "source_stem": fpath.stem,
+        "frame": image,
+        "frame_idx": 0,
+        "lines": {},
+        "run_dir": run_dir,
+    }, stop_event)
+    if not pushed:
+        _flow1_should_stop(stop_event, log, stop_state)
+        return False
+    log.info(f"[F1] Đã đọc ảnh: {fpath.name}")
+    return True
+
+
+def _flow1_push_video(
+    fpath: Path,
+    q_f1_f2,
+    run_dir: str,
+    target_fps: float,
+    conveyor_vertical: bool,
+    line_gap_ratio: float,
+    stop_event,
+    log,
+    stop_state: dict[str, bool],
+) -> bool:
+    """Đọc một video và đẩy từng frame đã lấy mẫu sang F2."""
+    if _flow1_should_stop(stop_event, log, stop_state):
+        return False
+    try:
+        info = sv.VideoInfo.from_video_path(str(fpath))
+    except Exception:
+        log.warning(f"[F1] Bỏ qua '{fpath.name}' - lỗi đọc video")
+        return True
+
+    fps = info.fps or 30.0
+    step = max(1, round(fps / target_fps)) if target_fps > 0 else 1
+    frame_dim = info.height if conveyor_vertical else info.width
+    lines = get_lines(frame_dim, line_gap_ratio)
+
+    log.info(
+        f"[F1] Đọc video: {fpath.name} | "
+        f"{info.width}x{info.height} | lines={dict(lines)}"
+    )
+    for i, frame in enumerate(sv.get_video_frames_generator(str(fpath), stride=step)):
+        if _flow1_should_stop(stop_event, log, stop_state):
+            return False
+        pushed = _put_queue(q_f1_f2, {
+            "type": "video",
+            "path": fpath,
+            "source_file": fpath.name,
+            "source_stem": fpath.stem,
+            "frame": frame,
+            "frame_idx": i * step + 1,
+            "lines": lines,
+            "run_dir": run_dir,
+        }, stop_event)
+        if not pushed:
+            _flow1_should_stop(stop_event, log, stop_state)
+            return False
+    log.info(f"[F1] Đọc xong: {fpath.name}")
+    return True
+
+
+def _flow1_process_file(
+    fpath: Path,
+    q_f1_f2,
+    run_dir: str,
+    cfg: dict,
+    img_exts: set[str],
+    vid_exts: set[str],
+    stop_event,
+    log,
+    stop_state: dict[str, bool],
+) -> bool:
+    """Chọn cách xử lý theo phần mở rộng của file đầu vào."""
+    suffix = fpath.suffix.lower()
+    if suffix in img_exts:
+        return _flow1_push_image(
+            fpath,
+            q_f1_f2,
+            run_dir,
+            stop_event,
+            log,
+            stop_state,
+        )
+    if suffix in vid_exts:
+        return _flow1_push_video(
+            fpath,
+            q_f1_f2,
+            run_dir,
+            cfg["TARGET_FPS"],
+            cfg["CONVEYOR_VERTICAL"],
+            cfg["LINE_GAP_RATIO"],
+            stop_event,
+            log,
+            stop_state,
+        )
+    return True
+
+
+# Hàm cha F1
 def flow1_read_input(
     q_f1_f2,
     flow_times: dict[str, float],
@@ -75,22 +204,10 @@ def flow1_read_input(
     log = get_logger()
     start_time = time.perf_counter()
     input_dir = cfg["INPUT_DIR"]
-    target_fps = cfg["TARGET_FPS"]
-    conveyor_vertical = cfg["CONVEYOR_VERTICAL"]
-    line_gap_ratio = cfg["LINE_GAP_RATIO"]
     img_exts = set(cfg["IMG_EXTS"])
     vid_exts = set(cfg["VID_EXTS"])
     input_path = Path(input_dir)
-    stop_logged = False
-
-    def _should_stop() -> bool:
-        nonlocal stop_logged
-        if not _stop_requested(stop_event):
-            return False
-        if not stop_logged:
-            log.info("[F1] Nhận tín hiệu dừng do flow khác lỗi, ngừng đọc input.")
-            stop_logged = True
-        return True
+    stop_state = {"logged": False}
 
     if not input_path.exists():
         log.warning(f"[F1] Thư mục '{input_dir}' không tồn tại!")
@@ -98,77 +215,19 @@ def flow1_read_input(
         flow_times["F1"] = time.perf_counter() - start_time
         return
 
-    def _push_image(fpath: Path) -> bool:
-        if _should_stop():
-            return False
-        image = cv2.imread(str(fpath))
-        if image is None:
-            log.warning(f"[F1] Bỏ qua '{fpath.name}' - lỗi đọc ảnh")
-            return True
-        pushed = _put_queue(q_f1_f2, {
-            "type": "image",
-            "path": fpath,
-            "source_file": fpath.name,
-            "source_stem": fpath.stem,
-            "frame": image,
-            "frame_idx": 0,
-            "lines": {},
-            "run_dir": run_dir,
-        }, stop_event)
-        if not pushed:
-            _should_stop()
-            return False
-        log.info(f"[F1] Đã đọc ảnh: {fpath.name}")
-        return True
-
-    def _push_video(fpath: Path) -> bool:
-        if _should_stop():
-            return False
-        try:
-            info = sv.VideoInfo.from_video_path(str(fpath))
-        except Exception:
-            log.warning(f"[F1] Bỏ qua '{fpath.name}' - lỗi đọc video")
-            return True
-
-        fps = info.fps or 30.0
-        step = max(1, round(fps / target_fps)) if target_fps > 0 else 1
-        frame_dim = info.height if conveyor_vertical else info.width
-        lines = get_lines(frame_dim, line_gap_ratio)
-
-        log.info(
-            f"[F1] Đọc video: {fpath.name} | "
-            f"{info.width}x{info.height} | lines={dict(lines)}"
-        )
-        for i, frame in enumerate(sv.get_video_frames_generator(str(fpath), stride=step)):
-            if _should_stop():
-                return False
-            pushed = _put_queue(q_f1_f2, {
-                "type": "video",
-                "path": fpath,
-                "source_file": fpath.name,
-                "source_stem": fpath.stem,
-                "frame": frame,
-                "frame_idx": i * step + 1,
-                "lines": lines,
-                "run_dir": run_dir,
-            }, stop_event)
-            if not pushed:
-                _should_stop()
-                return False
-        log.info(f"[F1] Đọc xong: {fpath.name}")
-        return True
-
-    def _process_file(fpath: Path) -> bool:
-        suffix = fpath.suffix.lower()
-        if suffix in img_exts:
-            return _push_image(fpath)
-        elif suffix in vid_exts:
-            return _push_video(fpath)
-        return True
-
     log.info(f"[F1] Quét thư mục '{input_dir}'")
     for fpath in sorted(input_path.iterdir()):
-        if _should_stop() or not _process_file(fpath):
+        if _flow1_should_stop(stop_event, log, stop_state) or not _flow1_process_file(
+            fpath,
+            q_f1_f2,
+            run_dir,
+            cfg,
+            img_exts,
+            vid_exts,
+            stop_event,
+            log,
+            stop_state,
+        ):
             break
 
     _put_queue(q_f1_f2, None, stop_event)
@@ -179,7 +238,7 @@ def flow1_read_input(
         log.info(f"[F1] Hoàn tất  |  {flow_times['F1']:.2f}s")
 
 
-# F2: Phát hiện & bám vết
+# Hàm cha F2
 def flow2_detect_track(model_det, q_f1_f2, q_f2_f3, flow_times: dict[str, float], cfg: dict, stop_event) -> None:
     """
     Chạy YOLO detect và gán track_id trước khi chuyển sang F3.
@@ -249,7 +308,95 @@ def flow2_detect_track(model_det, q_f1_f2, q_f2_f3, flow_times: dict[str, float]
     log.info(f"[F2] Hoàn tất  |  {flow_times['F2']:.2f}s")
 
 
-# F3: Kiểm tra chạm vạch
+# Hàm con F3
+def _flow3_has_required_touches(track_data: dict, lines: dict, required_touches: int) -> bool:
+    """Kiểm tra track đã chạm đủ số vạch tham chiếu hiện có chưa."""
+    required_count = min(required_touches, len(lines))
+    return len(track_data["lines_touched"]) >= required_count
+
+
+def _flow3_flush_track_to_f4(
+    track_id: int,
+    track_data: dict,
+    source_stem: str,
+    source_file: str,
+    lines: dict,
+    run_dir: str,
+    bbox_pad: int,
+    save_debug: bool,
+    required_touches: int,
+    q_f3_f4,
+    stop_event,
+) -> None:
+    """Đẩy frame tốt nhất của một track sang F4 nếu track đủ điều kiện."""
+    if lines and not _flow3_has_required_touches(track_data, lines, required_touches):
+        return
+    if track_data["best_frame"] is None:
+        return
+    masked = get_masked_image(track_data["best_frame"], track_data["best_box_xyxy"], bbox_pad)
+    if masked is None:
+        return
+
+    debug_images: dict = {}
+    if save_debug and track_data["touch_records"]:
+        paths = save_f3_debug(
+            run_dir=run_dir,
+            source_stem=source_stem,
+            track_id=track_id,
+            touch_records=track_data["touch_records"],
+            best_frame_idx=track_data["best_frame_idx"],
+            best_area=track_data["best_area"],
+            masked_img=masked,
+        )
+        debug_images.update(paths)
+
+    _put_queue(q_f3_f4, {
+        "type": "video",
+        "source_file": source_file,
+        "source_stem": source_stem,
+        "track_id": track_id,
+        "frame_idx": track_data["best_frame_idx"],
+        "masked_img": masked,
+        "orig_img": track_data["best_frame"],
+        "lines": lines,
+        "debug_images": debug_images,
+        "run_dir": run_dir,
+    }, stop_event)
+
+
+def _flow3_flush_all_active_tracks(
+    current_video: Path | None,
+    active_tracks: dict,
+    current_lines: dict,
+    current_run_dir: str,
+    bbox_pad: int,
+    save_debug: bool,
+    required_touches: int,
+    q_f3_f4,
+    stop_event,
+) -> None:
+    """Flush toàn bộ track đang hoạt động của video hiện tại sang F4."""
+    if current_video is None:
+        return
+    source_stem = current_video.stem
+    source_file = current_video.name
+    for track_id, track_data in list(active_tracks.items()):
+        _flow3_flush_track_to_f4(
+            track_id,
+            track_data,
+            source_stem,
+            source_file,
+            current_lines,
+            current_run_dir,
+            bbox_pad,
+            save_debug,
+            required_touches,
+            q_f3_f4,
+            stop_event,
+        )
+
+
+# Hàm cha F3
 def flow3_touch_logic(q_f2_f3, q_f3_f4, flow_times: dict[str, float], cfg: dict, stop_event) -> None:
     """
     Chọn frame tốt nhất trước khi segmentation.
@@ -273,74 +420,22 @@ def flow3_touch_logic(q_f2_f3, q_f3_f4, flow_times: dict[str, float], cfg: dict,
     current_lines = {}
     current_run_dir = ""
 
-    def has_required_touches(track_data: dict, lines: dict) -> bool:
-        """Kiểm tra track đã chạm đủ số vạch tham chiếu hiện có chưa."""
-        required_count = min(required_touches, len(lines))
-        return len(track_data["lines_touched"]) >= required_count
-
-    def flush_track_to_f4(
-        track_id: int,
-        track_data: dict,
-        source_stem: str,
-        source_file: str,
-        lines: dict,
-        run_dir: str,
-    ) -> None:
-        if lines and not has_required_touches(track_data, lines):
-            return
-        if track_data["best_frame"] is None:
-            return
-        masked = get_masked_image(track_data["best_frame"], track_data["best_box_xyxy"], bbox_pad)
-        if masked is None:
-            return
-
-        debug_images: dict = {}
-        if save_debug and track_data["touch_records"]:
-            paths = save_f3_debug(
-                run_dir=run_dir,
-                source_stem=source_stem,
-                track_id=track_id,
-                touch_records=track_data["touch_records"],
-                best_frame_idx=track_data["best_frame_idx"],
-                best_area=track_data["best_area"],
-                masked_img=masked,
-            )
-            debug_images.update(paths)
-
-        _put_queue(q_f3_f4, {
-            "type": "video",
-            "source_file": source_file,
-            "source_stem": source_stem,
-            "track_id": track_id,
-            "frame_idx": track_data["best_frame_idx"],
-            "masked_img": masked,
-            "orig_img": track_data["best_frame"],
-            "lines": lines,
-            "debug_images": debug_images,
-            "run_dir": run_dir,
-        }, stop_event)
-
-    def flush_all_active_tracks() -> None:
-        if current_video is None:
-            return
-        source_stem = current_video.stem
-        source_file = current_video.name
-        for track_id, track_data in list(active_tracks.items()):
-            flush_track_to_f4(
-                track_id,
-                track_data,
-                source_stem,
-                source_file,
-                current_lines,
-                current_run_dir,
-            )
-
     while True:
         item = _get_queue(q_f2_f3, stop_event)
 
         if item is None:
             if not _stop_requested(stop_event):
-                flush_all_active_tracks()
+                _flow3_flush_all_active_tracks(
+                    current_video,
+                    active_tracks,
+                    current_lines,
+                    current_run_dir,
+                    bbox_pad,
+                    save_debug,
+                    required_touches,
+                    q_f3_f4,
+                    stop_event,
+                )
             _put_queue(q_f3_f4, None, stop_event)
             break
 
@@ -356,7 +451,17 @@ def flow3_touch_logic(q_f2_f3, q_f3_f4, flow_times: dict[str, float], cfg: dict,
 
         if video_path != current_video:
             if not chunk_mode:
-                flush_all_active_tracks()
+                _flow3_flush_all_active_tracks(
+                    current_video,
+                    active_tracks,
+                    current_lines,
+                    current_run_dir,
+                    bbox_pad,
+                    save_debug,
+                    required_touches,
+                    q_f3_f4,
+                    stop_event,
+                )
                 active_tracks.clear()
                 completed_tracks.clear()
             current_video = video_path
@@ -414,14 +519,19 @@ def flow3_touch_logic(q_f2_f3, q_f3_f4, flow_times: dict[str, float], cfg: dict,
                     track_data["best_frame_idx"] = frame_idx
                     track_data["best_area"] = area
 
-            if has_required_touches(track_data, lines):
-                flush_track_to_f4(
+            if _flow3_has_required_touches(track_data, lines, required_touches):
+                _flow3_flush_track_to_f4(
                     track_id,
                     track_data,
                     video_path.stem,
                     video_path.name,
                     lines,
                     item["run_dir"],
+                    bbox_pad,
+                    save_debug,
+                    required_touches,
+                    q_f3_f4,
+                    stop_event,
                 )
                 completed_tracks.add(track_id)
                 del active_tracks[track_id]
@@ -430,7 +540,7 @@ def flow3_touch_logic(q_f2_f3, q_f3_f4, flow_times: dict[str, float], cfg: dict,
     log.info(f"[F3] Hoàn tất  |  {flow_times['F3']:.2f}s")
 
 
-# F4: Phân đoạn
+# Hàm cha F4
 def flow4_segment(model_seg, q_f3_f4, q_f4_f5, flow_times: dict[str, float], cfg: dict, stop_event) -> None:
     """
     Chạy YOLO segment trên masked_img và tạo crop mask cho F5.
@@ -445,7 +555,8 @@ def flow4_segment(model_seg, q_f3_f4, q_f4_f5, flow_times: dict[str, float], cfg
     bbox_pad = cfg["BBOX_PAD"]
     conf_seg = cfg["CONF_SEG"]
     save_debug = cfg["SAVE"]
-
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    
     while True:
         item = _get_queue(q_f3_f4, stop_event)
         if item is None:
@@ -487,6 +598,9 @@ def flow4_segment(model_seg, q_f3_f4, q_f4_f5, flow_times: dict[str, float], cfg
         y2 = min(h, int(seg_xyxy[3]) + bbox_pad)
         crop_mask = mask_full[y1:y2, x1:x2]
 
+        crop_mask = cv2.morphologyEx(crop_mask, cv2.MORPH_OPEN,  kernel)
+        crop_mask = cv2.morphologyEx(crop_mask, cv2.MORPH_CLOSE, kernel)
+
         if save_debug:
             paths = save_f4_debug(item, mask_full, seg_xyxy, crop_mask)
             item["debug_images"].update(paths)
@@ -508,7 +622,7 @@ def flow4_segment(model_seg, q_f3_f4, q_f4_f5, flow_times: dict[str, float], cfg
     log.info(f"[F4] Hoàn tất  |  {flow_times['F4']:.2f}s")
 
 
-# F5: Tìm đường dài nhất trên skeleton
+# Hàm cha F5
 def flow5_longest_path(q_f4_f5, q_f5_f6, flow_times: dict[str, float], cfg: dict, stop_event) -> None:
     """
     Tính skeleton và chiều dài pixel của tôm.
@@ -545,7 +659,37 @@ def flow5_longest_path(q_f4_f5, q_f5_f6, flow_times: dict[str, float], cfg: dict
     log.info(f"[F5] Hoàn tất  |  {flow_times['F5']:.2f}s")
 
 
-# F6: Lưu kết quả
+# Hàm con F6
+def _flow6_flush_json(
+    stem: str,
+    json_data: dict[str, dict],
+    stem_to_file: dict[str, str],
+    stem_to_run_dir: dict[str, str],
+    input_dir: str,
+    clear_input: bool,
+    log,
+) -> None:
+    """Ghi JSON của một source và xóa input tương ứng nếu CLEAR_INPUT bật."""
+    if stem not in json_data:
+        return
+    out_dir = Path(stem_to_run_dir[stem]) / stem
+    out_dir.mkdir(parents=True, exist_ok=True)
+    json_path = out_dir / f"{stem}_results.json"
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(json_data[stem], f, ensure_ascii=False, indent=2)
+    log.info(f"[F6] JSON -> {json_path}  ({len(json_data[stem]['shrimps'])} tôm)")
+
+    if clear_input and stem in stem_to_file:
+        input_file = Path(input_dir) / stem_to_file[stem]
+        try:
+            if input_file.exists():
+                input_file.unlink()
+                log.info(f"[F6] Đã xóa input: {stem_to_file[stem]}")
+        except Exception as e:
+            log.warning(f"[F6] Không xóa được input '{stem_to_file[stem]}': {e}")
+
+
+# Hàm cha F6
 def flow6_save_results(
     q_f5_f6,
     flow_times: dict[str, float],
@@ -575,26 +719,6 @@ def flow6_save_results(
     stem_to_run_dir: dict[str, str] = {}
     prev_stem: str | None = None
 
-    def _flush_json(stem: str) -> None:
-        """Ghi JSON của một source và xóa input tương ứng nếu CLEAR_INPUT bật."""
-        if stem not in json_data:
-            return
-        out_dir = Path(stem_to_run_dir[stem]) / stem
-        out_dir.mkdir(parents=True, exist_ok=True)
-        json_path = out_dir / f"{stem}_results.json"
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(json_data[stem], f, ensure_ascii=False, indent=2)
-        log.info(f"[F6] JSON -> {json_path}  ({len(json_data[stem]['shrimps'])} tôm)")
-
-        if clear_input and stem in stem_to_file:
-            input_file = Path(input_dir) / stem_to_file[stem]
-            try:
-                if input_file.exists():
-                    input_file.unlink()
-                    log.info(f"[F6] Đã xóa input: {stem_to_file[stem]}")
-            except Exception as e:
-                log.warning(f"[F6] Không xóa được input '{stem_to_file[stem]}': {e}")
-
     while True:
         item = _get_queue(q_f5_f6, stop_event)
         if item is None:
@@ -606,7 +730,15 @@ def flow6_save_results(
         stem = item["source_stem"]
 
         if prev_stem is not None and stem != prev_stem:
-            _flush_json(prev_stem)
+            _flow6_flush_json(
+                prev_stem,
+                json_data,
+                stem_to_file,
+                stem_to_run_dir,
+                input_dir,
+                clear_input,
+                log,
+            )
             json_data.pop(prev_stem, None)
             stem_to_file.pop(prev_stem, None)
             stem_to_run_dir.pop(prev_stem, None)
@@ -650,7 +782,15 @@ def flow6_save_results(
         )
 
     if prev_stem is not None:
-        _flush_json(prev_stem)
+        _flow6_flush_json(
+            prev_stem,
+            json_data,
+            stem_to_file,
+            stem_to_run_dir,
+            input_dir,
+            clear_input,
+            log,
+        )
 
     flow_times["F6"] = time.perf_counter() - start_time
     log.info(f"[F6] Hoàn tất  |  {flow_times['F6']:.2f}s")

@@ -6,7 +6,7 @@ File này không ghi dữ liệu ra đĩa, chỉ nhận skeleton nhị phân và
 đường đi dài nhất cùng độ dài pixel.
 """
 
-import math
+from math import sqrt
 from collections import deque
 
 import numpy as np
@@ -22,7 +22,8 @@ DIRECTIONS = (
     (1, -1),
     (1, 1),
 )
-SQRT2 = math.sqrt(2)
+
+SQRT = sqrt(2.0)
 
 
 def _bfs(
@@ -63,8 +64,9 @@ def find_longest_path(skeleton: np.ndarray) -> tuple[np.ndarray, float]:
     Tìm đường dài nhất trên skeleton bằng cách chạy BFS 2 lần.
 
     Tham số skeleton là ảnh nhị phân hoặc bool, trong đó pixel True là phần xương tôm.
-    Hàm trả về path_mask đánh dấu đường dài nhất và total_length là độ dài theo pixel,
-    có tính cạnh chéo là sqrt(2). Nếu skeleton rỗng thì trả về mask rỗng và 0.0.
+    Hàm trả về path_mask đánh dấu đường dài nhất và total_length là số pixel trên đường đi,
+    mỗi bước tính 1 px bất kể hướng ngang, dọc và căn 2 cho hướng chéo. Nếu skeleton rỗng thì trả về
+    mask rỗng và 0.0.
     """
     if not skeleton.any():
         return np.zeros_like(skeleton, dtype=bool), 0.0
@@ -82,7 +84,7 @@ def find_longest_path(skeleton: np.ndarray) -> tuple[np.ndarray, float]:
         prev = parent[node]
         dy = abs(node[0] - prev[0])
         dx = abs(node[1] - prev[1])
-        total_length += SQRT2 if dy == 1 and dx == 1 else 1.0
+        total_length += SQRT if dy == 1 and dx == 1 else 1.0
         node = prev
 
     path_mask[node] = True

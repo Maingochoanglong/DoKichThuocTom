@@ -5,11 +5,13 @@
     "CLEAR_OUTPUT": false,
     "CLEAR_INPUT": false,
     "CHUNK_MODE": false,
-    "SCALE": 1.0,
+    "SCALE": 0.175177,
     "CONF_DET": 0.5,
     "CONF_SEG": 0.5,
     "BBOX_PAD": 5,
-    "TOUCH_THRESHOLD": 10.0,
+    "LINE_GAP_RATIO": 0.2,
+    "TOUCH_THRESHOLD": 15.0,
+    "REQUIRE_TOUCH": 3,
     "TARGET_FPS": 0.0,
     "CONVEYOR_VERTICAL": false,
     "SAVE": true,
@@ -33,5 +35,24 @@
       ".webm",
       ".wmv"
     ]
+  },
+  "size": {
+    "SIZE_RANGES": {
+      "S": [
+        120,
+        140
+      ],
+      "M": [
+        140,
+        170
+      ],
+      "L": [
+        180,
+        220
+      ]
+    },
+    "UNDERSIZE_LABEL": "Ngoại cỡ nhỏ",
+    "OVERSIZE_LABEL": "Ngoại cỡ lớn",
+    "FALLBACK_LABEL": "Ngoại cỡ"
   }
 }
