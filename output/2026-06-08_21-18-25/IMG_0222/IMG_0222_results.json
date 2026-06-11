@@ -1,0 +1,22 @@
+{
+  "source_file": "IMG_0222.jpg",
+  "source_stem": "IMG_0222",
+  "processed_at": "2026-06-08T21:18:35",
+  "scale_mm_per_px": 0.184758,
+  "shrimps": [
+    {
+      "track_id": 1,
+      "frame_idx": 0,
+      "pixel_length": 1190.1,
+      "real_length_mm": 219.88,
+      "size": "L",
+      "images": {
+        "f4_seg": "output\\2026-06-08_21-18-25\\IMG_0222\\ID1\\F4_Seg_F0.jpg",
+        "f4_mask": "output\\2026-06-08_21-18-25\\IMG_0222\\ID1\\F4_Mask_F0.jpg",
+        "f5_skel": "output\\2026-06-08_21-18-25\\IMG_0222\\ID1\\F5_Skel_F0.jpg",
+        "f5_bfs": "output\\2026-06-08_21-18-25\\IMG_0222\\ID1\\F5_BFS_F0.jpg",
+        "f6_result": "output\\2026-06-08_21-18-25\\IMG_0222\\ID1\\F6_Result_F0_1190px.jpg"
+      }
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+2026-06-12T02:09:35 [INFO] Logger khởi tạo - log file: output\pipeline.log
+2026-06-12T02:09:35 [INFO] Đang tải mô hình 1 - Phát hiện (Detect)...
+2026-06-12T02:09:35 [INFO] Đang tải mô hình 2 - Phân đoạn (Segment)...
+2026-06-12T02:09:35 [INFO] Tải mô hình hoàn tất.
+2026-06-12T02:09:35 [INFO] SAVE=True  CLEAR_INPUT=False  CLEAR_OUTPUT=False
+2026-06-12T02:09:35 [INFO] Input  : input/
+2026-06-12T02:09:35 [INFO] Output : output\2026-06-12_02-09-35/
+2026-06-12T02:09:35 [INFO] [F1] Quét thư mục 'input'
+2026-06-12T02:09:35 [INFO] [F1] Đọc video: IMG_0133_xoay_trai_90.mp4 | 1920x1080 | lines={0: 432, 1: 540, 2: 648}
+2026-06-12T02:09:56 [INFO] [F1] Đọc xong: IMG_0133_xoay_trai_90.mp4
+2026-06-12T02:09:56 [INFO] [F1] Hoàn tất  |  20.65s
+2026-06-12T02:10:34 [INFO] [F2] Tracker mới cho: IMG_0133_xoay_trai_90.mp4
+2026-06-12T02:10:43 [INFO] [F3-debug] ID 1: đã lưu 3 khung chạm vạch
+2026-06-12T02:10:45 [INFO] [F3-debug] ID 2: đã lưu 3 khung chạm vạch
+2026-06-12T02:10:46 [INFO] [F3-debug] ID 3: đã lưu 3 khung chạm vạch
+2026-06-12T02:10:50 [INFO] [F3-debug] ID 4: đã lưu 3 khung chạm vạch
+2026-06-12T02:11:00 [INFO] [F3-debug] ID 5: đã lưu 3 khung chạm vạch
+2026-06-12T02:11:05 [INFO] [F3-debug] ID 8: đã lưu 3 khung chạm vạch
+2026-06-12T02:11:09 [INFO] [F3-debug] ID 9: đã lưu 3 khung chạm vạch
+2026-06-12T02:11:15 [INFO] [F3-debug] ID 10: đã lưu 3 khung chạm vạch
+2026-06-12T02:11:18 [INFO] [F3-debug] ID 11: đã lưu 3 khung chạm vạch
+2026-06-12T02:11:21 [INFO] [F3-debug] ID 13: đã lưu 3 khung chạm vạch
+2026-06-12T02:11:25 [INFO] [F3-debug] ID 14: đã lưu 3 khung chạm vạch
+2026-06-12T02:11:26 [INFO] [F3-debug] ID 16: đã lưu 3 khung chạm vạch
+2026-06-12T02:11:32 [INFO] [F3-debug] ID 17: đã lưu 3 khung chạm vạch
+2026-06-12T02:11:34 [INFO] [F3-debug] ID 18: đã lưu 3 khung chạm vạch
+2026-06-12T02:11:52 [INFO] [F2] Hoàn tất  |  136.62s
+2026-06-12T02:11:52 [INFO] [F3] Hoàn tất  |  136.61s
+2026-06-12T02:11:53 [INFO] [F4-debug] ID 1: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:11:53 [INFO] [F4] IMG_0133_xoay_trai_90 ID 1 phân đoạn xong
+2026-06-12T02:11:54 [INFO] [F4-debug] ID 2: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:11:54 [INFO] [F4] IMG_0133_xoay_trai_90 ID 2 phân đoạn xong
+2026-06-12T02:11:54 [INFO] [F5-debug] ID 1: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:11:54 [INFO] [F6] ID 1: kết quả cuối đã lưu -> F6_Result_F121_927px.jpg
+2026-06-12T02:11:54 [INFO] [F6] IMG_0133_xoay_trai_90 ID   1 | frame  121 |   927.2 px |  162.42 mm | size=M
+2026-06-12T02:11:54 [INFO] [F4-debug] ID 3: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:11:54 [INFO] [F4] IMG_0133_xoay_trai_90 ID 3 phân đoạn xong
+2026-06-12T02:11:55 [INFO] [F5-debug] ID 2: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:11:55 [INFO] [F6] ID 2: kết quả cuối đã lưu -> F6_Result_F149_987px.jpg
+2026-06-12T02:11:55 [INFO] [F6] IMG_0133_xoay_trai_90 ID   2 | frame  149 |   987.0 px |  172.89 mm | size=Ngoại cỡ
+2026-06-12T02:11:55 [INFO] [F4-debug] ID 4: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:11:55 [INFO] [F4] IMG_0133_xoay_trai_90 ID 4 phân đoạn xong
+2026-06-12T02:11:55 [INFO] [F4-debug] ID 5: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:11:55 [INFO] [F4] IMG_0133_xoay_trai_90 ID 5 phân đoạn xong
+2026-06-12T02:11:55 [INFO] [F5-debug] ID 3: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:11:55 [INFO] [F6] ID 3: kết quả cuối đã lưu -> F6_Result_F156_947px.jpg
+2026-06-12T02:11:55 [INFO] [F6] IMG_0133_xoay_trai_90 ID   3 | frame  156 |   946.5 px |  165.81 mm | size=M
+2026-06-12T02:11:55 [INFO] [F4-debug] ID 8: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:11:55 [INFO] [F4] IMG_0133_xoay_trai_90 ID 8 phân đoạn xong
+2026-06-12T02:11:56 [INFO] [F5-debug] ID 4: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:11:56 [INFO] [F6] ID 4: kết quả cuối đã lưu -> F6_Result_F231_896px.jpg
+2026-06-12T02:11:56 [INFO] [F6] IMG_0133_xoay_trai_90 ID   4 | frame  231 |   895.6 px |  156.89 mm | size=M
+2026-06-12T02:11:56 [INFO] [F4-debug] ID 9: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:11:56 [INFO] [F4] IMG_0133_xoay_trai_90 ID 9 phân đoạn xong
+2026-06-12T02:11:57 [INFO] [F5-debug] ID 5: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:11:57 [INFO] [F6] ID 5: kết quả cuối đã lưu -> F6_Result_F257_971px.jpg
+2026-06-12T02:11:57 [INFO] [F6] IMG_0133_xoay_trai_90 ID   5 | frame  257 |   971.4 px |  170.17 mm | size=Ngoại cỡ
+2026-06-12T02:11:57 [INFO] [F4-debug] ID 10: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:11:57 [INFO] [F4] IMG_0133_xoay_trai_90 ID 10 phân đoạn xong
+2026-06-12T02:11:57 [INFO] [F5-debug] ID 8: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:11:57 [INFO] [F6] ID 8: kết quả cuối đã lưu -> F6_Result_F331_765px.jpg
+2026-06-12T02:11:57 [INFO] [F6] IMG_0133_xoay_trai_90 ID   8 | frame  331 |   765.0 px |  134.01 mm | size=S
+2026-06-12T02:11:57 [INFO] [F4-debug] ID 11: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:11:57 [INFO] [F4] IMG_0133_xoay_trai_90 ID 11 phân đoạn xong
+2026-06-12T02:11:58 [INFO] [F5-debug] ID 9: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:11:58 [INFO] [F6] ID 9: kết quả cuối đã lưu -> F6_Result_F365_954px.jpg
+2026-06-12T02:11:58 [INFO] [F4-debug] ID 13: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:11:58 [INFO] [F4] IMG_0133_xoay_trai_90 ID 13 phân đoạn xong
+2026-06-12T02:11:58 [INFO] [F6] IMG_0133_xoay_trai_90 ID   9 | frame  365 |   954.1 px |  167.14 mm | size=M
+2026-06-12T02:11:58 [INFO] [F4-debug] ID 14: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:11:58 [INFO] [F4] IMG_0133_xoay_trai_90 ID 14 phân đoạn xong
+2026-06-12T02:11:59 [INFO] [F5-debug] ID 10: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:11:59 [INFO] [F6] ID 10: kết quả cuối đã lưu -> F6_Result_F378_984px.jpg
+2026-06-12T02:11:59 [INFO] [F6] IMG_0133_xoay_trai_90 ID  10 | frame  378 |   983.5 px |  172.30 mm | size=Ngoại cỡ
+2026-06-12T02:12:00 [INFO] [F4-debug] ID 16: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:12:00 [INFO] [F4] IMG_0133_xoay_trai_90 ID 16 phân đoạn xong
+2026-06-12T02:12:00 [INFO] [F5-debug] ID 11: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:12:00 [INFO] [F6] ID 11: kết quả cuối đã lưu -> F6_Result_F401_958px.jpg
+2026-06-12T02:12:00 [INFO] [F6] IMG_0133_xoay_trai_90 ID  11 | frame  401 |   957.8 px |  167.79 mm | size=M
+2026-06-12T02:12:00 [INFO] [F4-debug] ID 17: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:12:00 [INFO] [F4] IMG_0133_xoay_trai_90 ID 17 phân đoạn xong
+2026-06-12T02:12:00 [INFO] [F4-debug] ID 18: đã lưu ảnh phân đoạn + mask vùng cắt
+2026-06-12T02:12:00 [INFO] [F4] IMG_0133_xoay_trai_90 ID 18 phân đoạn xong
+2026-06-12T02:12:00 [INFO] [F4] Hoàn tất  |  144.98s
+2026-06-12T02:12:00 [INFO] [F5-debug] ID 13: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:12:00 [INFO] [F6] ID 13: kết quả cuối đã lưu -> F6_Result_F453_926px.jpg
+2026-06-12T02:12:00 [INFO] [F6] IMG_0133_xoay_trai_90 ID  13 | frame  453 |   926.3 px |  162.26 mm | size=M
+2026-06-12T02:12:01 [INFO] [F5-debug] ID 14: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:12:01 [INFO] [F6] ID 14: kết quả cuối đã lưu -> F6_Result_F486_949px.jpg
+2026-06-12T02:12:01 [INFO] [F6] IMG_0133_xoay_trai_90 ID  14 | frame  486 |   949.4 px |  166.31 mm | size=M
+2026-06-12T02:12:01 [INFO] [F5-debug] ID 16: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:12:01 [INFO] [F6] ID 16: kết quả cuối đã lưu -> F6_Result_F494_905px.jpg
+2026-06-12T02:12:01 [INFO] [F6] IMG_0133_xoay_trai_90 ID  16 | frame  494 |   904.7 px |  158.48 mm | size=M
+2026-06-12T02:12:02 [INFO] [F5-debug] ID 17: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:12:02 [INFO] [F6] ID 17: kết quả cuối đã lưu -> F6_Result_F544_931px.jpg
+2026-06-12T02:12:02 [INFO] [F6] IMG_0133_xoay_trai_90 ID  17 | frame  544 |   931.1 px |  163.11 mm | size=M
+2026-06-12T02:12:02 [INFO] [F5-debug] ID 18: đã lưu trục giữa (Skel) + đường BFS dài nhất
+2026-06-12T02:12:02 [INFO] [F5] Hoàn tất  |  146.80s
+2026-06-12T02:12:02 [INFO] [F6] ID 18: kết quả cuối đã lưu -> F6_Result_F558_778px.jpg
+2026-06-12T02:12:02 [INFO] [F6] IMG_0133_xoay_trai_90 ID  18 | frame  558 |   778.3 px |  136.34 mm | size=S
+2026-06-12T02:12:02 [INFO] [F6] JSON -> output\2026-06-12_02-09-35\IMG_0133_xoay_trai_90\IMG_0133_xoay_trai_90_results.json  (14 tôm)
+2026-06-12T02:12:02 [INFO] [F6] Hoàn tất  |  146.82s
+2026-06-12T02:12:02 [INFO] 
+====================================================
+2026-06-12T02:12:02 [INFO]   THỜI GIAN THỰC THI TỪNG LUỒNG
+2026-06-12T02:12:02 [INFO] ----------------------------------------------------
+2026-06-12T02:12:02 [INFO]   F1  Đọc input (Ảnh/Video)       20.65 s
+2026-06-12T02:12:02 [INFO]   F2  Phát hiện & Theo dõi       136.62 s
+2026-06-12T02:12:02 [INFO]   F3  Kiểm tra chạm đường        136.61 s
+2026-06-12T02:12:02 [INFO]   F4  Phân đoạn (Segment)        144.98 s
+2026-06-12T02:12:02 [INFO]   F5  Tính skeleton & BFS        146.80 s
+2026-06-12T02:12:02 [INFO]   F6  Lưu kết quả & JSON         146.82 s
+2026-06-12T02:12:02 [INFO] ----------------------------------------------------
+2026-06-12T02:12:02 [INFO]   TỔNG CỘNG                      146.91 s  (00:02:26)
+2026-06-12T02:12:02 [INFO] ====================================================
+2026-06-12T02:12:02 [INFO] Kết quả đã lưu tại: output\2026-06-12_02-09-35/

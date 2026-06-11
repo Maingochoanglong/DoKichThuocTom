@@ -1,0 +1,288 @@
+{
+  "source_file": "IMG_0133_xoay_trai_90.mp4",
+  "source_stem": "IMG_0133_xoay_trai_90",
+  "processed_at": "2026-06-12T02:11:54",
+  "scale_mm_per_px": 0.175177,
+  "shrimps": [
+    {
+      "track_id": 1,
+      "frame_idx": 121,
+      "pixel_length": 927.2,
+      "real_length_mm": 162.42,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID1\\F3_Best_F121_197214px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID1\\F3_Touch_F90_189867px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID1\\F3_Touch_F101_195429px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID1\\F3_Touch_F121_197214px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID1\\F4_Seg_F121.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID1\\F4_Mask_F121.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID1\\F5_Skel_F121.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID1\\F5_BFS_F121.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID1\\F6_Result_F121_927px.jpg"
+      }
+    },
+    {
+      "track_id": 2,
+      "frame_idx": 149,
+      "pixel_length": 987.0,
+      "real_length_mm": 172.89,
+      "size": "Ngoại cỡ",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID2\\F3_Best_F149_213735px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID2\\F3_Touch_F121_212234px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID2\\F3_Touch_F133_211439px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID2\\F3_Touch_F149_213735px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID2\\F4_Seg_F149.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID2\\F4_Mask_F149.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID2\\F5_Skel_F149.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID2\\F5_BFS_F149.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID2\\F6_Result_F149_987px.jpg"
+      }
+    },
+    {
+      "track_id": 3,
+      "frame_idx": 156,
+      "pixel_length": 946.5,
+      "real_length_mm": 165.81,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID3\\F3_Best_F156_278711px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID3\\F3_Touch_F138_270055px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID3\\F3_Touch_F156_278711px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID3\\F3_Touch_F168_271502px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID3\\F4_Seg_F156.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID3\\F4_Mask_F156.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID3\\F5_Skel_F156.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID3\\F5_BFS_F156.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID3\\F6_Result_F156_947px.jpg"
+      }
+    },
+    {
+      "track_id": 4,
+      "frame_idx": 231,
+      "pixel_length": 895.6,
+      "real_length_mm": 156.89,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID4\\F3_Best_F231_276072px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID4\\F3_Touch_F189_269553px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID4\\F3_Touch_F207_273876px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID4\\F3_Touch_F231_276072px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID4\\F4_Seg_F231.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID4\\F4_Mask_F231.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID4\\F5_Skel_F231.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID4\\F5_BFS_F231.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID4\\F6_Result_F231_896px.jpg"
+      }
+    },
+    {
+      "track_id": 5,
+      "frame_idx": 257,
+      "pixel_length": 971.4,
+      "real_length_mm": 170.17,
+      "size": "Ngoại cỡ",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID5\\F3_Best_F257_346338px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID5\\F3_Touch_F257_346338px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID5\\F3_Touch_F269_341860px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID5\\F3_Touch_F281_335073px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID5\\F4_Seg_F257.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID5\\F4_Mask_F257.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID5\\F5_Skel_F257.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID5\\F5_BFS_F257.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID5\\F6_Result_F257_971px.jpg"
+      }
+    },
+    {
+      "track_id": 8,
+      "frame_idx": 331,
+      "pixel_length": 765.0,
+      "real_length_mm": 134.01,
+      "size": "S",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID8\\F3_Best_F331_128620px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID8\\F3_Touch_F298_123856px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID8\\F3_Touch_F315_125916px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID8\\F3_Touch_F331_128620px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID8\\F4_Seg_F331.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID8\\F4_Mask_F331.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID8\\F5_Skel_F331.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID8\\F5_BFS_F331.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID8\\F6_Result_F331_765px.jpg"
+      }
+    },
+    {
+      "track_id": 9,
+      "frame_idx": 365,
+      "pixel_length": 954.1,
+      "real_length_mm": 167.14,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID9\\F3_Best_F365_259875px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID9\\F3_Touch_F331_249471px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID9\\F3_Touch_F345_254523px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID9\\F3_Touch_F365_259875px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID9\\F4_Seg_F365.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID9\\F4_Mask_F365.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID9\\F5_Skel_F365.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID9\\F5_BFS_F365.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID9\\F6_Result_F365_954px.jpg"
+      }
+    },
+    {
+      "track_id": 10,
+      "frame_idx": 378,
+      "pixel_length": 983.5,
+      "real_length_mm": 172.3,
+      "size": "Ngoại cỡ",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID10\\F3_Best_F378_247404px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID10\\F3_Touch_F361_228838px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID10\\F3_Touch_F378_247404px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID10\\F3_Touch_F396_244024px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID10\\F4_Seg_F378.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID10\\F4_Mask_F378.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID10\\F5_Skel_F378.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID10\\F5_BFS_F378.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID10\\F6_Result_F378_984px.jpg"
+      }
+    },
+    {
+      "track_id": 11,
+      "frame_idx": 401,
+      "pixel_length": 957.8,
+      "real_length_mm": 167.79,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID11\\F3_Best_F401_240694px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID11\\F3_Touch_F387_240242px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID11\\F3_Touch_F401_240694px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID11\\F3_Touch_F417_235689px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID11\\F4_Seg_F401.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID11\\F4_Mask_F401.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID11\\F5_Skel_F401.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID11\\F5_BFS_F401.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID11\\F6_Result_F401_958px.jpg"
+      }
+    },
+    {
+      "track_id": 13,
+      "frame_idx": 453,
+      "pixel_length": 926.3,
+      "real_length_mm": 162.26,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID13\\F3_Best_F453_226478px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID13\\F3_Touch_F432_220462px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID13\\F3_Touch_F447_224613px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID13\\F3_Touch_F453_226478px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID13\\F4_Seg_F453.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID13\\F4_Mask_F453.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID13\\F5_Skel_F453.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID13\\F5_BFS_F453.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID13\\F6_Result_F453_926px.jpg"
+      }
+    },
+    {
+      "track_id": 14,
+      "frame_idx": 486,
+      "pixel_length": 949.4,
+      "real_length_mm": 166.31,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID14\\F3_Best_F486_255179px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID14\\F3_Touch_F471_249795px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID14\\F3_Touch_F479_251056px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID14\\F3_Touch_F486_255179px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID14\\F4_Seg_F486.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID14\\F4_Mask_F486.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID14\\F5_Skel_F486.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID14\\F5_BFS_F486.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID14\\F6_Result_F486_949px.jpg"
+      }
+    },
+    {
+      "track_id": 16,
+      "frame_idx": 494,
+      "pixel_length": 904.7,
+      "real_length_mm": 158.48,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID16\\F3_Best_F494_256934px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID16\\F3_Touch_F485_248315px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID16\\F3_Touch_F494_256934px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID16\\F3_Touch_F504_250362px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID16\\F4_Seg_F494.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID16\\F4_Mask_F494.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID16\\F5_Skel_F494.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID16\\F5_BFS_F494.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID16\\F6_Result_F494_905px.jpg"
+      }
+    },
+    {
+      "track_id": 17,
+      "frame_idx": 544,
+      "pixel_length": 931.1,
+      "real_length_mm": 163.11,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID17\\F3_Best_F544_266234px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID17\\F3_Touch_F529_252548px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID17\\F3_Touch_F544_266234px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID17\\F3_Touch_F551_257415px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID17\\F4_Seg_F544.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID17\\F4_Mask_F544.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID17\\F5_Skel_F544.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID17\\F5_BFS_F544.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID17\\F6_Result_F544_931px.jpg"
+      }
+    },
+    {
+      "track_id": 18,
+      "frame_idx": 558,
+      "pixel_length": 778.3,
+      "real_length_mm": 136.34,
+      "size": "S",
+      "images": {
+        "f3_best": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID18\\F3_Best_F558_278594px.jpg",
+        "f3_touches": [
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID18\\F3_Touch_F549_277287px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID18\\F3_Touch_F558_278594px.jpg",
+          "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID18\\F3_Touch_F568_277263px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID18\\F4_Seg_F558.jpg",
+        "f4_mask": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID18\\F4_Mask_F558.jpg",
+        "f5_skel": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID18\\F5_Skel_F558.jpg",
+        "f5_bfs": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID18\\F5_BFS_F558.jpg",
+        "f6_result": "output\\2026-06-12_02-09-35\\IMG_0133_xoay_trai_90\\ID18\\F6_Result_F558_778px.jpg"
+      }
+    }
+  ]
+}

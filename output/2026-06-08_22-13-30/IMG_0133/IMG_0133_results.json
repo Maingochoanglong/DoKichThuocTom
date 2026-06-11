@@ -1,0 +1,268 @@
+{
+  "source_file": "IMG_0133.mp4",
+  "source_stem": "IMG_0133",
+  "processed_at": "2026-06-08T22:13:44",
+  "scale_mm_per_px": 0.175177,
+  "shrimps": [
+    {
+      "track_id": 1,
+      "frame_idx": 101,
+      "pixel_length": 932.5,
+      "real_length_mm": 163.34,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID1\\F3_Best_F101_196760px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID1\\F3_Touch_F83_168811px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID1\\F3_Touch_F101_196760px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID1\\F3_Touch_F127_194458px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID1\\F4_Seg_F101.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID1\\F4_Mask_F101.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID1\\F5_Skel_F101.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID1\\F5_BFS_F101.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID1\\F6_Result_F101_932px.jpg"
+      }
+    },
+    {
+      "track_id": 2,
+      "frame_idx": 159,
+      "pixel_length": 987.5,
+      "real_length_mm": 172.99,
+      "size": "Ngoại cỡ",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID2\\F3_Best_F159_224724px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID2\\F3_Touch_F112_213660px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID2\\F3_Touch_F134_209034px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID2\\F3_Touch_F159_224724px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID2\\F4_Seg_F159.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID2\\F4_Mask_F159.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID2\\F5_Skel_F159.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID2\\F5_BFS_F159.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID2\\F6_Result_F159_988px.jpg"
+      }
+    },
+    {
+      "track_id": 3,
+      "frame_idx": 132,
+      "pixel_length": 941.1,
+      "real_length_mm": 164.87,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID3\\F3_Best_F132_269505px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID3\\F3_Touch_F132_269505px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID3\\F3_Touch_F157_266175px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID3\\F3_Touch_F176_263581px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID3\\F4_Seg_F132.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID3\\F4_Mask_F132.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID3\\F5_Skel_F132.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID3\\F5_BFS_F132.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID3\\F6_Result_F132_941px.jpg"
+      }
+    },
+    {
+      "track_id": 4,
+      "frame_idx": 207,
+      "pixel_length": 895.3,
+      "real_length_mm": 156.84,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID4\\F3_Best_F207_274072px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID4\\F3_Touch_F182_272573px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID4\\F3_Touch_F207_274072px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID4\\F3_Touch_F241_273270px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID4\\F4_Seg_F207.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID4\\F4_Mask_F207.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID4\\F5_Skel_F207.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID4\\F5_BFS_F207.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID4\\F6_Result_F207_895px.jpg"
+      }
+    },
+    {
+      "track_id": 5,
+      "frame_idx": 247,
+      "pixel_length": 949.5,
+      "real_length_mm": 166.34,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID5\\F3_Best_F247_332910px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID5\\F3_Touch_F247_332910px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID5\\F3_Touch_F270_331394px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID5\\F3_Touch_F291_330480px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID5\\F4_Seg_F247.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID5\\F4_Mask_F247.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID5\\F5_Skel_F247.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID5\\F5_BFS_F247.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID5\\F6_Result_F247_950px.jpg"
+      }
+    },
+    {
+      "track_id": 9,
+      "frame_idx": 290,
+      "pixel_length": 749.7,
+      "real_length_mm": 131.33,
+      "size": "S",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID9\\F3_Best_F290_127167px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID9\\F3_Touch_F290_127167px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID9\\F3_Touch_F314_125446px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID9\\F3_Touch_F340_125588px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID9\\F4_Seg_F290.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID9\\F4_Mask_F290.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID9\\F5_Skel_F290.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID9\\F5_BFS_F290.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID9\\F6_Result_F290_750px.jpg"
+      }
+    },
+    {
+      "track_id": 10,
+      "frame_idx": 346,
+      "pixel_length": 963.4,
+      "real_length_mm": 168.76,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID10\\F3_Best_F346_261746px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID10\\F3_Touch_F322_255454px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID10\\F3_Touch_F346_261746px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID10\\F3_Touch_F374_260198px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID10\\F4_Seg_F346.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID10\\F4_Mask_F346.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID10\\F5_Skel_F346.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID10\\F5_BFS_F346.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID10\\F6_Result_F346_963px.jpg"
+      }
+    },
+    {
+      "track_id": 11,
+      "frame_idx": 403,
+      "pixel_length": 994.9,
+      "real_length_mm": 174.28,
+      "size": "Ngoại cỡ",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID11\\F3_Best_F403_242991px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID11\\F3_Touch_F349_216216px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID11\\F3_Touch_F379_233278px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID11\\F3_Touch_F403_242991px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID11\\F4_Seg_F403.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID11\\F4_Mask_F403.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID11\\F5_Skel_F403.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID11\\F5_BFS_F403.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID11\\F6_Result_F403_995px.jpg"
+      }
+    },
+    {
+      "track_id": 12,
+      "frame_idx": 376,
+      "pixel_length": 961.2,
+      "real_length_mm": 168.37,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID12\\F3_Best_F376_244369px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID12\\F3_Touch_F376_244369px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID12\\F3_Touch_F403_234458px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID12\\F3_Touch_F422_238240px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID12\\F4_Seg_F376.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID12\\F4_Mask_F376.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID12\\F5_Skel_F376.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID12\\F5_BFS_F376.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID12\\F6_Result_F376_961px.jpg"
+      }
+    },
+    {
+      "track_id": 15,
+      "frame_idx": 456,
+      "pixel_length": 941.1,
+      "real_length_mm": 164.87,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID15\\F3_Best_F456_224995px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID15\\F3_Touch_F427_219884px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID15\\F3_Touch_F447_220894px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID15\\F3_Touch_F456_224995px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID15\\F4_Seg_F456.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID15\\F4_Mask_F456.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID15\\F5_Skel_F456.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID15\\F5_BFS_F456.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID15\\F6_Result_F456_941px.jpg"
+      }
+    },
+    {
+      "track_id": 16,
+      "frame_idx": 464,
+      "pixel_length": 931.9,
+      "real_length_mm": 163.25,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID16\\F3_Best_F464_255427px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID16\\F3_Touch_F464_255427px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID16\\F3_Touch_F480_251799px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID16\\F3_Touch_F492_248659px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID16\\F4_Seg_F464.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID16\\F4_Mask_F464.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID16\\F5_Skel_F464.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID16\\F5_BFS_F464.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID16\\F6_Result_F464_932px.jpg"
+      }
+    },
+    {
+      "track_id": 17,
+      "frame_idx": 530,
+      "pixel_length": 937.5,
+      "real_length_mm": 164.23,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID17\\F3_Best_F530_259328px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID17\\F3_Touch_F482_251973px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID17\\F3_Touch_F495_247194px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID17\\F3_Touch_F530_259328px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID17\\F4_Seg_F530.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID17\\F4_Mask_F530.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID17\\F5_Skel_F530.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID17\\F5_BFS_F530.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID17\\F6_Result_F530_937px.jpg"
+      }
+    },
+    {
+      "track_id": 19,
+      "frame_idx": 559,
+      "pixel_length": 950.5,
+      "real_length_mm": 166.51,
+      "size": "M",
+      "images": {
+        "f3_best": "output\\2026-06-08_22-13-30\\IMG_0133\\ID19\\F3_Best_F559_272025px.jpg",
+        "f3_touches": [
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID19\\F3_Touch_F545_270963px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID19\\F3_Touch_F559_272025px.jpg",
+          "output\\2026-06-08_22-13-30\\IMG_0133\\ID19\\F3_Touch_F575_266146px.jpg"
+        ],
+        "f4_seg": "output\\2026-06-08_22-13-30\\IMG_0133\\ID19\\F4_Seg_F559.jpg",
+        "f4_mask": "output\\2026-06-08_22-13-30\\IMG_0133\\ID19\\F4_Mask_F559.jpg",
+        "f5_skel": "output\\2026-06-08_22-13-30\\IMG_0133\\ID19\\F5_Skel_F559.jpg",
+        "f5_bfs": "output\\2026-06-08_22-13-30\\IMG_0133\\ID19\\F5_BFS_F559.jpg",
+        "f6_result": "output\\2026-06-08_22-13-30\\IMG_0133\\ID19\\F6_Result_F559_951px.jpg"
+      }
+    }
+  ]
+}
