@@ -1,0 +1,8 @@
+flask
+openpyxl
+numpy
+opencv-python
+scikit-image
+supervision
+ultralytics
+openvino

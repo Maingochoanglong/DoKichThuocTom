@@ -1,0 +1,13 @@
+# Local Python/Conda environments
+.conda/
+.venv/
+venv/
+env/
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OpenVINO compiled-model cache
+openvino_cache/
